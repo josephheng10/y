@@ -1,0 +1,17 @@
+{
+  "messages": [
+    {
+      "id": "sample-1",
+      "from": "econ-undergrads@panlists.yale.edu",
+      "subject": "[Econ DUS] Paid summer research assistant positions — apply by Friday",
+      "text": "Professors in the department are hiring undergraduate research assistants for the summer. Stipend provided. Applications due Friday.",
+      "headers": { "List-Id": "<econ-undergrads.panlists.yale.edu>" }
+    },
+    {
+      "id": "sample-2",
+      "from": "a.friend@yale.edu",
+      "subject": "dinner?",
+      "text": "Personal message — this should be SKIPPED by the listserv filter."
+    }
+  ]
+}

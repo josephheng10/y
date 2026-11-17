@@ -1,0 +1,18 @@
+{
+  "items": [
+    {
+      "source": "fizz",
+      "external_id": "sample-fizz-001",
+      "title": "[Sample Fizz] Free boba at the Schwarzman Center till 4",
+      "text": "Some club is giving out free boba at Schwarzman, line is short rn"
+    },
+    {
+      "source": "fizz",
+      "external_id": "sample-fizz-002",
+      "title": "[Sample Fizz] Pickup basketball at Payne Whitney tonight",
+      "category": "Event",
+      "summary": "Looking for 4 more people, 8pm, all levels.",
+      "location": "Payne Whitney Gym"
+    }
+  ]
+}
