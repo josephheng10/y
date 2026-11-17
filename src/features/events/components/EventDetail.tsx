@@ -1,29 +1,36 @@
 import Link from "next/link";
 import { formatWhen } from "@/lib/format";
-import type { CampusEvent } from "../types";
+import type { Item } from "@/lib/types";
 
-export function EventDetail({ event }: { event: CampusEvent }) {
+export function EventDetail({ event }: { event: Item }) {
   return (
-    <article className="rounded-2xl border border-black/8 bg-white p-5 shadow-sm">
-      <p className="text-sm text-zinc-500">{event.host}</p>
-      <h1 className="mt-1 text-2xl font-semibold tracking-tight">{event.title}</h1>
-      <p className="mt-4 text-[15px] leading-6 text-zinc-800">{event.summary}</p>
-      <dl className="mt-5 grid gap-3 text-sm">
-        <div>
-          <dt className="text-zinc-500">When</dt>
-          <dd>
-            {formatWhen(event.startsAt)} – {formatWhen(event.endsAt)}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-zinc-500">Where</dt>
-          <dd>{event.location}</dd>
-        </div>
+    <article className="border border-white/10 p-5">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan">{event.source}</p>
+      <h2 className="mt-2 font-display text-5xl leading-none">{event.title}</h2>
+      {event.summary ? <p className="mt-4 max-w-xl text-sm leading-6 text-neutral-300">{event.summary}</p> : null}
+      <dl className="mt-6 grid gap-3 text-sm">
+        {event.starts_at ? (
+          <div>
+            <dt className="text-neutral-500">When</dt>
+            <dd>{formatWhen(event.starts_at)}</dd>
+          </div>
+        ) : null}
+        {event.location ? (
+          <div>
+            <dt className="text-neutral-500">Where</dt>
+            <dd>{event.location}</dd>
+          </div>
+        ) : null}
       </dl>
-      <p className="mt-6">
-        <Link href="/events" className="text-sm font-medium text-[#00356b] hover:underline">
+      <p className="mt-6 flex gap-4 text-sm">
+        <Link href="/events" className="text-cyan hover:underline">
           All events
         </Link>
+        {event.url ? (
+          <a href={event.url} className="text-cyan hover:underline">
+            Source
+          </a>
+        ) : null}
       </p>
     </article>
   );

@@ -1,20 +1,25 @@
-import { Suspense } from "react";
-import { AreaNav } from "@/components/AreaNav";
-import { FizzFeed } from "@/features/fizz";
+import { Feed } from "@/features/feed";
+import { getSession } from "@/lib/auth";
+import { env, hasGoogle, hasLLM, hasMicrosoft, seedDemo } from "@/lib/env";
+import { listItems, storeKind } from "@/lib/store";
 
-export default function Home({
-  searchParams,
-}: {
-  searchParams: Promise<{ q?: string }>;
-}) {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const session = await getSession();
+  const items = await listItems({ userId: session?.user?.email ?? null });
   return (
-    <div className="min-h-full bg-[#f4f1ea] text-zinc-900">
-      <AreaNav current="/" />
-      <main className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-5 py-6">
-        <Suspense fallback={<p className="text-sm text-zinc-600">Loading posts…</p>}>
-          <FizzFeed searchParams={searchParams} />
-        </Suspense>
-      </main>
-    </div>
+    <Feed
+      initialItems={items}
+      user={session?.user?.email ? { email: session.user.email, provider: session.provider ?? null } : null}
+      config={{
+        google: hasGoogle(),
+        microsoft: hasMicrosoft(),
+        yaleconnect: Boolean(env.yaleConnectIcalUrl),
+        llm: hasLLM(),
+        store: storeKind(),
+        demo: seedDemo(),
+      }}
+    />
   );
 }

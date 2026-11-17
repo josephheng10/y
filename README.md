@@ -1,6 +1,32 @@
 # Y
 
-Y is the hub Yale students use to find what is happening and what they need to know. This repo is organized so each person can own one area without editing the same files.
+Y is the hub for what is happening at Yale. The wall collects listserv mail, YaleConnect, and Fizz into one feed. Events, info, and the raw Fizz catalog are separate areas so people can work on them without editing the same files.
+
+## Where work goes
+
+```
+src/app/                    URLs and API routes. Pages stay thin.
+src/features/feed/          The wall: cards, filters, taste.
+src/features/events/        Event and YaleConnect items from the shared store.
+src/features/info/          Durable campus guides.
+src/features/fizz/          Local Fizz catalog, and the adapter into ingest.
+src/lib/                    Shared types, store, auth, tagger, and source ingest.
+src/components/             Chrome used by more than one area (nav, page shell).
+scripts/                    Jobs that refresh outside data.
+```
+
+Import another area only from its `index.ts`. Shared code moves to `src/lib` or `src/components` when a second area needs it.
+
+| URL | Area |
+| --- | --- |
+| `/` | Wall |
+| `/events` | Events |
+| `/info` | Info |
+| `/posts` | Fizz catalog |
+| `/ask` | Questions over posts, events, and info |
+| `/api/ingest/fizz` | Plug Fizz posts into the wall |
+| `/api/ingest/email` | Listserv sync |
+| `/api/ingest/yaleconnect` | YaleConnect iCal sync |
 
 ## Run it
 
@@ -9,56 +35,44 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). You need Node 20 or newer.
+Open [http://localhost:3000](http://localhost:3000). With no env vars the wall uses fictional demo items from `src/lib/demo-data.ts`. Copy `.env.example` to `.env.local` to turn on a real source. Each integration is independent.
 
-## Where work goes
-
-```
-src/app/                 URLs only. A page loads one feature and renders it.
-src/features/events/     Campus events: source, types, and UI.
-src/features/info/       Durable campus info: guides, offices, how-tos.
-src/features/fizz/       Student posts. UI lives here.
-src/lib/fizz.ts          Fizz catalog reader. Stays here while the database hookup is in progress.
-src/components/          UI used by more than one area, such as the top nav.
-src/lib/                 Helpers used by more than one area.
-scripts/                 Jobs that refresh outside data. Not imported by pages.
-```
-
-Each feature has the same shape:
-
-```
-features/<area>/
-  index.ts        What the rest of the app is allowed to import
-  types.ts
-  data.ts         The only file in that area that reads a source
-  components/     UI for that area
-```
-
-Routes today:
-
-| URL | Area | Folder |
+| Feature | Env vars | Without them |
 | --- | --- | --- |
-| `/` | Posts | `src/features/fizz` and `src/lib/fizz.ts` |
-| `/events`, `/events/[id]` | Events | `src/features/events` |
-| `/info`, `/info/[slug]` | Info | `src/features/info` |
+| Gmail sign-in + ingest | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `NEXTAUTH_SECRET` | button disabled |
+| Outlook / Yale M365 | `AZURE_AD_CLIENT_ID`, `AZURE_AD_CLIENT_SECRET`, `AZURE_AD_TENANT_ID` | button disabled |
+| Supabase storage | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | memory + `.data/items.json` |
+| AI tagging | `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL` | keyword heuristic |
+| YaleConnect | `YALECONNECT_ICAL_URL` | button disabled |
+| Protect ingest routes | `INGEST_SECRET` | open locally |
 
-Events and info currently render sample listings so the shape is fixed. Replace the array in that area's `data.ts` when a real source is ready, and keep the function names (`listEvents`, `getEvent`, `listInfo`, `getInfo`).
+`SEED_DEMO=false` hides the fictional items.
 
-The Fizz database stays outside this repo, in `BS/output/fizz`. `npm run fizz:import` loads new catalog batches from that inbox. New Fizz scripts go in `scripts/` and stay out of React components.
+## Fizz
 
-## How we work in parallel
+The catalog reader lives in `src/lib/fizz.ts` and is exported from `src/features/fizz`. It reads the sqlite file at `BS/output/fizz/fizz.sqlite` (override with `FIZZ_DB`). `npm run fizz:import` loads JSON batches dropped in that inbox. It does not open Fizz.
 
-1. Pick an area and stay inside its folder plus its route under `src/app`.
-2. Import another area only from its `index.ts`. Reach into `components/` or `data.ts` of another area only by moving that code into the public index first.
-3. Keep pages thin. A route file should call the feature and render what it returns. Data queries, parsing, and card markup belong in the feature. If the page reads the request (a search, a database, or an id), do that read inside `<Suspense>` so the nav can render immediately.
-4. Add shared code only when a second area needs it. The first version lives in the feature. The second use is what earns a spot in `src/components` or `src/lib`.
-5. Name branches `<area>/<topic>`, for example `events/college-teas` or `fizz/refresh`.
-6. Open a pull request with the area filled in. The template is in `.github/pull_request_template.md`.
-7. Leave `.env*`, sqlite files, and scraped inbox JSON untracked. The gitignore already skips env files. Databases live under `BS/output`, not in this repo.
+`postToFizzInput` turns a catalog post into the body `POST /api/ingest/fizz` already accepts. Required fields there are `external_id` and `title`. If `category` is missing, the tagger fills it in. Sample payload: `examples/fizz-items.json`.
 
-## Add a new area
+## Email and YaleConnect
 
-1. Create `src/features/<name>/types.ts`, `data.ts`, `index.ts`, and `components/`.
-2. Export only what routes need from `index.ts`.
-3. Add `src/app/<name>/page.tsx` that imports from `@/features/<name>`.
-4. Add the route to `areas` in `src/components/AreaNav.tsx`.
+`POST /api/ingest/email` pulls the last 3 days of the signed-in inbox and keeps listserv-like mail only. Bodies are used for tagging and are not stored.
+
+YaleConnect uses iCal subscribe links. `src/lib/ingest/ical.ts` parses them. `vercel.json` refreshes that route every 3 hours. If `INGEST_SECRET` is set, set Vercel `CRON_SECRET` to the same value.
+
+OAuth redirect URIs:
+
+- Google: `http://localhost:3000/api/auth/callback/google`
+- Microsoft: `http://localhost:3000/api/auth/callback/azure-ad`
+
+Gmail scope is `gmail.readonly`. Graph permissions are `Mail.Read`, `User.Read`, `offline_access`, `openid`, `profile`, and `email`. Yale's tenant may require admin consent.
+
+## Storage
+
+Run `supabase/schema.sql` if you use Supabase. The service-role key stays on the server. RLS is on with no public policies. Demo items are merged at read time and are not written to the database.
+
+On Vercel, set `NEXTAUTH_URL` and use Supabase. The memory store does not survive a serverless instance.
+
+## How we work
+
+Name branches `<area>/<topic>`, for example `events/yaleconnect` or `posts/catalog`. Pull requests name the area. Leave `.env.local`, `.data/`, and the sqlite catalog untracked.

@@ -1,26 +1,45 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-ink: #f4f4f1;
+  --color-cyan: #20ccee;
+  --color-paper: #efece4;
+  --font-sans: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-bebas), "Arial Narrow", Impact, sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #070708;
+  color: #f4f4f1;
+}
+
+::selection {
+  background: #20ccee;
+  color: #070708;
+}
+
+:focus-visible {
+  outline: 2px solid #20ccee;
+  outline-offset: 2px;
+}
+
+button,
+a {
+  cursor: pointer;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.poster-stub {
+  background-image: radial-gradient(circle at left, #070708 6px, transparent 6.5px),
+    radial-gradient(circle at right, #070708 6px, transparent 6.5px);
+  background-size: 14px 14px;
+  background-repeat: repeat-y;
+  background-position: left center, right center;
 }

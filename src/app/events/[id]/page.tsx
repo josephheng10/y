@@ -1,28 +1,17 @@
-import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { AreaNav } from "@/components/AreaNav";
-import { EventDetail, getEvent, listEvents } from "@/features/events";
+import { PageShell } from "@/components/PageShell";
+import { EventDetail, getCampusEvent } from "@/features/events";
 
-export function generateStaticParams() {
-  return listEvents().map((event) => ({ id: event.id }));
-}
+export const dynamic = "force-dynamic";
 
-async function EventBody({ params }: { params: Promise<{ id: string }> }) {
+export default async function EventPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const event = getEvent(id);
+  const event = await getCampusEvent(decodeURIComponent(id));
   if (!event) notFound();
-  return <EventDetail event={event} />;
-}
 
-export default function EventPage({ params }: { params: Promise<{ id: string }> }) {
   return (
-    <div className="min-h-full bg-[#f4f1ea] text-zinc-900">
-      <AreaNav current="/events" />
-      <main className="mx-auto w-full max-w-3xl px-5 py-6">
-        <Suspense fallback={<p className="text-sm text-zinc-600">Loading event…</p>}>
-          <EventBody params={params} />
-        </Suspense>
-      </main>
-    </div>
+    <PageShell current="/events" title="Events">
+      <EventDetail event={event} />
+    </PageShell>
   );
 }

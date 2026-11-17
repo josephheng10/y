@@ -1,41 +1,20 @@
-import type { CampusEvent } from "./types";
+import { listItems } from "@/lib/store";
+import type { Item } from "@/lib/types";
 
-// Sample listings that lock the events shape. Replace the array with a real
-// source later; keep listEvents and getEvent as the public functions.
-const events: CampusEvent[] = [
-  {
-    id: "silliman-tea",
-    title: "Silliman college tea",
-    summary: "Weekly tea in the common room. Open to the residential college.",
-    startsAt: "2026-11-19T16:00:00-05:00",
-    endsAt: "2026-11-19T17:30:00-05:00",
-    location: "Silliman College common room",
-    host: "Silliman College",
-  },
-  {
-    id: "yso-woolsey",
-    title: "Yale Symphony Orchestra",
-    summary: "Fall concert. Doors open 30 minutes before the downbeat.",
-    startsAt: "2026-11-21T19:30:00-05:00",
-    endsAt: "2026-11-21T21:30:00-05:00",
-    location: "Woolsey Hall",
-    host: "Yale Symphony Orchestra",
-  },
-  {
-    id: "club-fair",
-    title: "Winter club fair",
-    summary: "Student organizations tabling for new members.",
-    startsAt: "2026-12-02T12:00:00-05:00",
-    endsAt: "2026-12-02T15:00:00-05:00",
-    location: "Payne Whitney Gymnasium",
-    host: "Yale College Council",
-  },
-];
-
-export function listEvents(): CampusEvent[] {
-  return [...events].sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+export async function listCampusEvents(): Promise<Item[]> {
+  const items = await listItems();
+  const seen = new Set<string>();
+  return items
+    .filter((item) => {
+      if (item.category !== "Event" && item.source !== "yaleconnect") return false;
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    })
+    .sort((a, b) => (a.starts_at ?? "9999").localeCompare(b.starts_at ?? "9999"));
 }
 
-export function getEvent(id: string): CampusEvent | undefined {
+export async function getCampusEvent(id: string): Promise<Item | undefined> {
+  const events = await listCampusEvents();
   return events.find((event) => event.id === id);
 }

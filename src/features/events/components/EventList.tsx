@@ -1,26 +1,26 @@
 import Link from "next/link";
 import { formatWhen } from "@/lib/format";
-import { listEvents } from "../data";
+import { listCampusEvents } from "../data";
 
-export function EventList() {
-  const events = listEvents();
+export async function EventList() {
+  const events = await listCampusEvents();
+  if (events.length === 0) {
+    return <p className="border border-white/10 px-4 py-8 text-sm text-neutral-400">No events in the hub yet.</p>;
+  }
 
   return (
-    <div className="flex flex-col gap-4">
-      <p className="text-sm text-zinc-600">
-        Sample listings. This folder is the home for the events source and UI.
-      </p>
+    <div className="grid gap-6 sm:grid-cols-2">
       {events.map((event) => (
-        <article key={event.id} className="rounded-2xl border border-black/8 bg-white p-5 shadow-sm">
-          <p className="text-sm text-zinc-500">{formatWhen(event.startsAt)}</p>
-          <h2 className="mt-1 text-lg font-semibold">
-            <Link href={`/events/${event.id}`} className="hover:underline">
+        <article key={event.id} className="border border-white/10 p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan">{event.source}</p>
+          <h2 className="mt-2 text-xl font-semibold">
+            <Link href={`/events/${encodeURIComponent(event.id)}`} className="hover:underline">
               {event.title}
             </Link>
           </h2>
-          <p className="mt-2 text-[15px] leading-6 text-zinc-700">{event.summary}</p>
-          <p className="mt-3 text-sm text-zinc-500">
-            {event.location} · {event.host}
+          {event.summary ? <p className="mt-2 text-sm leading-6 text-neutral-300">{event.summary}</p> : null}
+          <p className="mt-3 text-sm text-neutral-500">
+            {[event.starts_at ? formatWhen(event.starts_at) : null, event.location].filter(Boolean).join(" · ")}
           </p>
         </article>
       ))}
