@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { signIn, signOut } from "next-auth/react";
 import { SiteNav } from "@/components/SiteNav";
 import { rankToday } from "@/lib/rank";
@@ -351,7 +352,7 @@ export default function Feed({ initialItems, user, config }: Props) {
             onChange={patch}
             onSync={sync}
             onSignIn={(provider) => void signIn(provider)}
-            onSignOut={() => void signOut()}
+            onSignOut={() => void signOut({ callbackUrl: "/" })}
           />
         )}
       </main>
@@ -629,18 +630,40 @@ function YouPanel({
       </div>
 
       <div>
-        <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Sources</h3>
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Account</h3>
         <div className="mt-3 divide-y divide-white/10 border border-white/10">
           {user ? (
             <>
-              <SourceRow
-                title={busy === "Email" ? "Syncing mail" : "Sync listservs"}
-                detail={user.email}
-                enabled
-                onClick={() => onSync("/api/ingest/email", "Email")}
-              />
-              <SourceRow title="Sign out" detail={user.provider ?? "session"} enabled onClick={onSignOut} />
+              <div className="px-4 py-3">
+                <p className="text-sm">{user.email}</p>
+                <p className="text-xs text-neutral-500">
+                  {user.provider === "google" ? "Gmail" : user.provider === "azure-ad" ? "Outlook" : "Email and password"}
+                </p>
+              </div>
+              <SourceRow title="Sign out" detail="End this session" enabled onClick={onSignOut} />
             </>
+          ) : (
+            <Link href="/login" className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left">
+              <span>
+                <span className="block text-sm">Sign in</span>
+                <span className="block text-xs text-neutral-500">Email, Gmail, or Outlook</span>
+              </span>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan">Open</span>
+            </Link>
+          )}
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Sources</h3>
+        <div className="mt-3 divide-y divide-white/10 border border-white/10">
+          {user && (user.provider === "google" || user.provider === "azure-ad") ? (
+            <SourceRow
+              title={busy === "Email" ? "Syncing mail" : "Sync listservs"}
+              detail={user.email}
+              enabled
+              onClick={() => onSync("/api/ingest/email", "Email")}
+            />
           ) : (
             <>
               <SourceRow title="Connect Gmail" detail={config.google ? "Read-only listservs" : "Needs Google keys"} enabled={config.google} onClick={() => onSignIn("google")} />

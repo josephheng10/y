@@ -1,5 +1,8 @@
+import type { Session } from "next-auth";
 import type { Metadata, Viewport } from "next";
 import { Bebas_Neue, Schibsted_Grotesk } from "next/font/google";
+import { AuthProvider } from "@/components/AuthProvider";
+import { getSession } from "@/lib/auth";
 import "./globals.css";
 
 const grotesk = Schibsted_Grotesk({
@@ -24,10 +27,13 @@ export const viewport: Viewport = {
   themeColor: "#070708",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const session = (await getSession()) as Session | null;
   return (
     <html lang="en" className={`${grotesk.variable} ${bebas.variable}`}>
-      <body className="min-h-dvh bg-[#070708] font-sans text-ink antialiased">{children}</body>
+      <body className="min-h-dvh bg-[#070708] font-sans text-ink antialiased">
+        <AuthProvider session={session}>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

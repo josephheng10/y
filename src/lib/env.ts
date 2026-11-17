@@ -2,7 +2,7 @@
 export const env = {
   supabaseUrl: process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "",
   supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY || "",
-  llmApiKey: process.env.LLM_API_KEY || "",
+  llmApiKey: process.env.LLM_API_KEY || process.env.OPENAI_API_KEY || "",
   llmBaseUrl: (process.env.LLM_BASE_URL || "https://api.openai.com/v1").replace(/\/$/, ""),
   llmModel: process.env.LLM_MODEL || "gpt-4o-mini",
   yaleConnectIcalUrl: process.env.YALECONNECT_ICAL_URL || "",
@@ -22,7 +22,8 @@ export const hasSupabase = () => Boolean(env.supabaseUrl && env.supabaseServiceK
 export const hasLLM = () => Boolean(env.llmApiKey);
 export const hasGoogle = () => Boolean(env.googleId && env.googleSecret);
 export const hasMicrosoft = () => Boolean(env.msId && env.msSecret);
-export const hasAuth = () => hasGoogle() || hasMicrosoft();
+/** Email/password is always on. Google and Microsoft are optional extra providers. */
+export const hasAuth = () => true;
 
 /** Demo seed: on by default unless SEED_DEMO=false. */
 export const seedDemo = () => (process.env.SEED_DEMO ?? "true").toLowerCase() !== "false";
