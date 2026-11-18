@@ -1,82 +1,80 @@
 <img width="3024" height="1964" alt="unnamed" src="https://github.com/user-attachments/assets/c64213aa-cc75-4644-852e-1b01f8097491" />
 
-<img width="1000" height="1000" alt="mail google" src="https://github.com/user-attachments/assets/f0cb268f-ee1b-45ba-ae10-dc27f3f5bce0" />
+**Y** is an X-style campus feed built for Yale students at a hackathon.
 
-Y is the hub for what is happening at Yale. The wall collects listserv mail, YaleConnect, and Fizz into one feed. Events, info, and the raw Fizz catalog are separate areas so people can work on them without editing the same files.
+Y brings together what's happening at Yale, from club events, talks, performances, and free food to campus opportunities and student discussions. Browse the Wall to see what's going on, or use **Ask Y** to research a question across the Yale Fizz archive and campus listings.
 
-## Where work goes
+## Research Yale Fizz with Ask Y
 
-```
-src/app/                    URLs and API routes. Pages stay thin.
-src/features/feed/          The wall: cards, filters, taste.
-src/features/events/        Event and YaleConnect items from the shared store.
-src/features/info/          Durable campus guides.
-src/features/fizz/          Local Fizz catalog, and the adapter into ingest.
-src/lib/                    Shared types, store, auth, tagger, and source ingest.
-src/components/             Chrome used by more than one area (nav, page shell).
-scripts/                    Jobs that refresh outside data.
-```
+**Posts** lets you search the saved Fizz archive by keyword and read the original post text with its capture date and available engagement counts. **Ask Y** takes a question like “What parties are going on tonight?” and pulls together relevant posts, their comments, and available flyer details. It can also include matching events and campus guides. The answer shows source excerpts and links you can follow in Y, along with the archive's capture date when available.
 
-Import another area only from its `index.ts`. Shared code moves to `src/lib` or `src/components` when a second area needs it.
+## Explore the app
 
-| URL | Area |
+| Page | What you'll find |
 | --- | --- |
-| `/` | Wall |
-| `/events` | Events |
-| `/info` | Info |
-| `/posts` | Fizz catalog |
-| `/ask` | Questions over posts, events, and info |
-| `/api/ingest/fizz` | Plug Fizz posts into the wall |
-| `/api/ingest/email` | Listserv sync |
-| `/api/ingest/yaleconnect` | YaleConnect iCal sync |
+| Wall (`/`) | A personalized feed with dates, topics, and source filters. Save items for later, open Tonight for near-term plans, or use Dig campus to find calendars and newsletters. |
+| Events (`/events`) | A browsable list of campus events from configured sources such as YaleConnect and public calendars, with times and locations when available. |
+| Posts (`/posts`) | Searchable posts from the Yale Fizz archive. |
+| Info (`/info`) | Guides to everyday Yale tasks like checking dining hours, reading course listings, and reserving rooms. |
+| Ask Y (`/ask`) | A research chat that summarizes relevant material and shows the sources it used. |
 
-## Run it
+## Run locally
+
+Use Node.js 22.13 or later and npm. Run these commands from the repository root.
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). With no env vars the wall uses fictional demo items from `src/lib/demo-data.ts`. Copy `.env.example` to `.env.local` to turn on a real source. Each integration is independent.
+Open [localhost:3000](http://localhost:3000). Wall and Events start with fictional demo items. The Posts search and Ask Y questions require a configured Fizz archive. To enable integrations, copy [`.env.example`](.env.example) to `.env.local` and fill in the relevant variables.
 
-| Feature | Env vars | Without them |
-| --- | --- | --- |
-| Gmail sign-in + ingest | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `NEXTAUTH_SECRET` | button disabled |
-| Outlook / Yale M365 | `AZURE_AD_CLIENT_ID`, `AZURE_AD_CLIENT_SECRET`, `AZURE_AD_TENANT_ID` | button disabled |
-| Supabase storage | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | memory + `.data/items.json` |
-| AI tagging | `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL` | keyword heuristic |
-| YaleConnect | `YALECONNECT_ICAL_URL` | button disabled |
-| Protect ingest routes | `INGEST_SECRET` | open locally |
+### Connect the Fizz archive
 
-`SEED_DEMO=false` hides the fictional items.
+- **SQLite** works with an existing archive at `../output/fizz/fizz.sqlite` relative to the repository root. Set `FIZZ_DB` to use another path.
+- **Supabase** uses the [Fizz schema](supabase/fizz.sql). Apply it to your project, set `FIZZ_SUPABASE_URL` and `FIZZ_SUPABASE_SECRET_KEY` in the server environment, and run `npm run fizz:migrate` to copy records from your SQLite archive and verify row counts. Rerun the migration after updating the SQLite archive.
+- **Summaries** can use an OpenAI-compatible endpoint via `LLM_API_KEY`, `LLM_BASE_URL`, and `LLM_MODEL`. Ask Y uses a built-in summary when the model is unavailable. The same endpoint can help categorize ingested items.
 
-## Fizz
+The archive is refreshed from imported data. The Windows `npm run fizz:import` script expects an existing batch importer at `../output/fizz/catalog_batch.py` and JSON batches in `../output/fizz/inbox/`. To send selected Fizz items to the Wall, use `POST /api/ingest/fizz` with an `external_id` and `title` for each item. See the [sample Wall payload](examples/fizz-items.json).
 
-`/posts` and `/ask` use the Fizz archive through `src/lib/fizz.ts`. By default it reads `BS/output/fizz/fizz.sqlite`. Set `FIZZ_DB` to use another SQLite file. `npm run fizz:import` loads JSON batches dropped in the SQLite archive's inbox.
+### Other integrations
 
-To use the hosted archive, run `supabase/fizz.sql` in the Supabase SQL Editor and set `FIZZ_SUPABASE_URL` and `FIZZ_SUPABASE_SECRET_KEY` in the server environment. Run `npm run fizz:migrate` with Node.js 22.13 or later to upsert the SQLite tables and verify their row counts. Rerun the command after importing new SQLite batches to upload the updates.
+| Integration | Setup |
+| --- | --- |
+| YaleConnect | Set `YALECONNECT_ICAL_URL` to one or more comma-separated iCal subscription URLs. The [Vercel configuration](vercel.json) schedules a refresh every three hours. |
+| Gmail and Microsoft Outlook | Set the Google or Azure AD OAuth credentials in [`.env.example`](.env.example). Inbox sync looks back three days by default and stores summaries of listserv messages. |
+| Application storage | Apply [`supabase/schema.sql`](supabase/schema.sql) and set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` for persistent Wall and Events items. Local installs can use `.data/items.json`. Email/password accounts use `.data/users.json` where the filesystem is writable. |
+| Demo data | Set `SEED_DEMO=false` to hide fictional items on Wall and Events. Ask Y currently reads its event context from demo data and the local item file. |
 
-`postToFizzInput` turns a catalog post into the body `POST /api/ingest/fizz` already accepts. Required fields there are `external_id` and `title`. If `category` is missing, the tagger fills it in. Sample payload: `examples/fizz-items.json`.
+For local OAuth, register `http://localhost:3000/api/auth/callback/google` or `http://localhost:3000/api/auth/callback/azure-ad` with the provider. Gmail uses read-only inbox access, and Microsoft uses Graph `Mail.Read`. Yale's Microsoft tenant may require admin consent.
 
-## Email and YaleConnect
+For a deployment, set `NEXTAUTH_URL` to the deployed URL and configure `NEXTAUTH_SECRET`. Keep Supabase keys on the server. Set `INGEST_SECRET` to protect ingest routes that accept a shared secret. If Vercel runs the YaleConnect refresh, give `CRON_SECRET` the same value.
 
-`POST /api/ingest/email` pulls the last 3 days of the signed-in inbox and keeps listserv-like mail only. Bodies are used for tagging and are not stored.
+## Repository layout
 
-YaleConnect uses iCal subscribe links. `src/lib/ingest/ical.ts` parses them. `vercel.json` refreshes that route every 3 hours. If `INGEST_SECRET` is set, set Vercel `CRON_SECRET` to the same value.
+Y uses Next.js App Router, React, TypeScript, Tailwind CSS, and NextAuth. SQLite stores the local Fizz archive, and Supabase supports hosted archive and feed storage.
 
-OAuth redirect URIs:
+```text
+src/app/                  Pages, layouts, and API routes
+src/features/feed/        Wall, filters, and personalization
+src/features/events/      Event lists and detail pages
+src/features/info/        Campus guides
+src/features/fizz/        Posts search and the adapter for Wall imports
+src/features/ask/         Research chat, source ranking, and summaries
+src/components/           Shared navigation, page shells, and account UI
+src/lib/                  Auth, storage, ranking, and source ingestion
+supabase/                 Database schemas for feed items and the Fizz archive
+scripts/                  Archive import and migration scripts
+examples/                 Sample iCal, listserv, and Fizz payloads
+```
 
-- Google: `http://localhost:3000/api/auth/callback/google`
-- Microsoft: `http://localhost:3000/api/auth/callback/azure-ad`
+Import other feature areas through their `index.ts`. Name branches `<area>/<topic>` and identify the area in the pull request. Keep `.env.local`, `.data/`, and the archive database out of Git.
 
-Gmail scope is `gmail.readonly`. Graph permissions are `Mail.Read`, `User.Read`, `offline_access`, `openid`, `profile`, and `email`. Yale's tenant may require admin consent.
+Run `npm run lint` and `npm run typecheck` for code checks, or `npm run build` for a production build.
 
-## Storage
+<details>
+<summary>Additional project image</summary>
 
-Run `supabase/schema.sql` if you use Supabase. The service-role key stays on the server. RLS is on with no public policies. Demo items are merged at read time and are not written to the database.
+<img width="1000" height="1000" alt="mail google" src="https://github.com/user-attachments/assets/f0cb268f-ee1b-45ba-ae10-dc27f3f5bce0" />
 
-On Vercel, set `NEXTAUTH_URL` and use Supabase. The memory store does not survive a serverless instance.
-
-## How we work
-
-Name branches `<area>/<topic>`, for example `events/yaleconnect` or `posts/catalog`. Pull requests name the area. Leave `.env.local`, `.data/`, and the sqlite catalog untracked.
+</details>
