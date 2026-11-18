@@ -1,23 +1,19 @@
-import { Suspense } from "react";
 import { PageShell } from "@/components/PageShell";
-import { FizzFeed } from "@/features/fizz";
+import { FixxSummary } from "@/features/fixx";
 
-export const dynamic = "force-dynamic";
-
-export default function PostsPage({
+export default async function PostsPage({
   searchParams,
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
+  const { q = "" } = await searchParams;
   return (
     <PageShell
       current="/posts"
-      title="Posts"
-      lede="The local Fizz catalog. Tagged posts land on the wall through /api/ingest/fizz."
+      title="Fixx summary"
+      lede="Mock campus chatter for demos — not a live Fizz connection. Ask the chatbot or browse the sample feed."
     >
-      <Suspense fallback={<p className="text-sm text-neutral-400">Loading posts…</p>}>
-        <FizzFeed searchParams={searchParams} />
-      </Suspense>
+      <FixxSummary initialQuery={q} />
     </PageShell>
   );
 }

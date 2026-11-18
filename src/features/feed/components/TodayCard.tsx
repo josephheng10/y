@@ -14,8 +14,8 @@ export default function TodayCard({
   return (
     <section>
       <div className="mb-3 flex items-end justify-between">
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.22em] text-neutral-500">Next few hours</h2>
-        <span className="text-[11px] uppercase tracking-[0.16em] text-neutral-600">{items.length}</span>
+        <h2 className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--text-muted)]">Next few hours</h2>
+        <span className="text-[11px] uppercase tracking-[0.16em] text-[var(--text-faint)]">{items.length}</span>
       </div>
       <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 sm:-mx-0 sm:px-0">
         {items.map((item) => (

@@ -6,7 +6,7 @@ export default function AskPage() {
     <PageShell
       current="/ask"
       title="Ask"
-      lede="Ask about campus plans. Y searches the Fizz catalog, events, and info pages."
+      lede="Ask about campus plans. Y answers from the Fixx summary mock feed, demo events, and info pages — no API keys required."
     >
       <AskChat />
     </PageShell>

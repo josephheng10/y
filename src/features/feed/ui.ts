@@ -9,9 +9,9 @@ export const CAT_STYLE: Record<Category, { emoji: string; chip: string; dot: str
 };
 
 export const SOURCE_STYLE: Record<Source, { label: string; icon: string; cls: string }> = {
-  email: { label: "Listserv", icon: "✉️", cls: "text-sky-700" },
+  email: { label: "Email", icon: "✉️", cls: "text-sky-700" },
   yaleconnect: { label: "YaleConnect", icon: "🏛️", cls: "text-yale" },
-  fizz: { label: "Fizz", icon: "🫧", cls: "text-pink-600" },
+  fizz: { label: "Fixx", icon: "🫧", cls: "text-pink-600" },
 };
 
 const TZ = "America/New_York";

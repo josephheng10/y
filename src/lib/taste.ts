@@ -244,7 +244,7 @@ export function refCode(id: string): string {
 }
 
 export function sourceLabel(source: Item["source"]): string {
-  if (source === "email") return "Listserv";
+  if (source === "email") return "Email";
   if (source === "yaleconnect") return "YaleConnect";
-  return "Fizz";
+  return "Fixx";
 }

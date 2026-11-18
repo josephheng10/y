@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { signIn, signOut } from "next-auth/react";
 import { useState, type FormEvent, type ReactNode } from "react";
-import { SiteNav } from "./SiteNav";
+import { AppChrome } from "./AppChrome";
 
 const ERRORS: Record<string, string> = {
   CredentialsSignin: "That email and password don't match.",
@@ -78,37 +78,28 @@ export function AuthScreen({ mode, callbackUrl, initialError, session, providers
   }
 
   return (
-    <div className="min-h-dvh bg-[#070708] text-ink">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-[#070708]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-baseline gap-3 px-4 py-3">
-          <Link href="/" className="font-display text-4xl leading-none tracking-tight">
-            Y
-          </Link>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-500">New Haven</p>
-        </div>
-        <SiteNav current="/" />
-      </header>
-      <main className="mx-auto max-w-md px-4 py-10">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan">{mode === "login" ? "Account" : "New account"}</p>
-        <h1 className="mt-2 font-display text-7xl leading-none">{mode === "login" ? "Sign in" : "Join"}</h1>
-        <p className="mt-3 text-sm text-neutral-400">
+    <AppChrome current="/">
+      <main className="mx-auto max-w-md px-4 py-8">
+        <p className="text-[13px] font-semibold text-[var(--accent)]">{mode === "login" ? "Account" : "New account"}</p>
+        <h1 className="mt-1 text-[32px] font-extrabold tracking-tight">{mode === "login" ? "Sign in" : "Join"}</h1>
+        <p className="mt-2 text-[15px] text-[var(--text-muted)]">
           {mode === "login"
-            ? "Your account keeps private listserv mail on your wall. The rest of campus stays open."
-            : "A name, an email, and a password. Gmail and Outlook can come later for listserv sync."}
+            ? "Your account keeps private email on your wall. The rest of campus stays open."
+            : "A name, an email, and a password. Gmail and Outlook can come later for email sync."}
         </p>
 
         {session ? (
-          <div className="mt-8 border border-white/10 px-4 py-5">
-            <p className="text-sm">You&apos;re signed in as {session.name || session.email}.</p>
-            <p className="mt-1 text-xs text-neutral-500">{session.email}</p>
+          <div className="mt-8 rounded-2xl border border-[var(--border)] px-4 py-5">
+            <p className="text-[15px]">You&apos;re signed in as {session.name || session.email}.</p>
+            <p className="mt-1 text-[13px] text-[var(--text-muted)]">{session.email}</p>
             <div className="mt-4 flex gap-2">
-              <Link href={callbackUrl} className="bg-cyan px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-black">
+              <Link href={callbackUrl} className="rounded-full bg-[var(--accent)] px-4 py-2 text-[13px] font-bold text-white">
                 Continue
               </Link>
               <button
                 type="button"
                 onClick={() => void signOut({ callbackUrl: mode === "login" ? "/login" : "/signup" })}
-                className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400"
+                className="px-3 py-2 text-[13px] font-semibold text-[var(--text-muted)]"
               >
                 Sign out
               </button>
@@ -167,11 +158,11 @@ export function AuthScreen({ mode, callbackUrl, initialError, session, providers
                   />
                 </Field>
               )}
-              {error && <p className="border border-white/15 px-3 py-2 text-sm text-neutral-200">{error}</p>}
+              {error && <p className="rounded-xl border border-[var(--border)] px-3 py-2 text-[14px] text-[var(--text)]">{error}</p>}
               <button
                 type="submit"
                 disabled={pending !== null}
-                className="w-full bg-cyan px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-black disabled:opacity-50"
+                className="w-full rounded-full bg-[var(--text)] px-4 py-3 text-[15px] font-bold text-[var(--bg)] disabled:opacity-50"
               >
                 {pending === "email" ? "Working" : mode === "login" ? "Sign in" : "Create account"}
               </button>
@@ -179,11 +170,11 @@ export function AuthScreen({ mode, callbackUrl, initialError, session, providers
 
             {mode === "login" && (
               <div className="mt-8">
-                <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Or continue with</h2>
-                <div className="mt-3 divide-y divide-white/10 border border-white/10">
+                <h2 className="text-[13px] font-semibold text-[var(--text-muted)]">Or continue with</h2>
+                <div className="mt-3 divide-y divide-[var(--border)] overflow-hidden rounded-2xl border border-[var(--border)]">
                   <ProviderButton
                     title="Gmail"
-                    detail={providers.google ? "Also unlocks listserv sync" : "Needs Google keys"}
+                    detail={providers.google ? "Also unlocks email sync" : "Needs Google keys"}
                     enabled={providers.google && pending === null}
                     pending={pending === "google"}
                     onClick={() => void onProvider("google")}
@@ -199,25 +190,26 @@ export function AuthScreen({ mode, callbackUrl, initialError, session, providers
               </div>
             )}
 
-            <p className="mt-6 text-sm text-neutral-400">
+            <p className="mt-6 text-[14px] text-[var(--text-muted)]">
               {mode === "login" ? "No account yet?" : "Already have one?"}{" "}
-              <Link href={otherHref} className="text-cyan">
+              <Link href={otherHref} className="font-semibold text-[var(--accent)]">
                 {mode === "login" ? "Create one" : "Sign in"}
               </Link>
             </p>
           </>
         )}
       </main>
-    </div>
+    </AppChrome>
   );
 }
 
-const fieldClass = "mt-2 w-full border border-white/15 bg-transparent px-3 py-3 text-base outline-none placeholder:text-neutral-600 focus:border-cyan";
+const fieldClass =
+  "mt-2 w-full rounded-xl border border-[var(--border)] bg-transparent px-3 py-3 text-[15px] outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--accent)]";
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="block">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">{label}</span>
+      <span className="text-[13px] font-semibold text-[var(--text-muted)]">{label}</span>
       {children}
     </label>
   );
@@ -244,10 +236,10 @@ function ProviderButton({
       className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left disabled:cursor-not-allowed disabled:opacity-40"
     >
       <span>
-        <span className="block text-sm">{pending ? "Opening" : title}</span>
-        <span className="block text-xs text-neutral-500">{detail}</span>
+        <span className="block text-[15px]">{pending ? "Opening" : title}</span>
+        <span className="block text-[13px] text-[var(--text-muted)]">{detail}</span>
       </span>
-      <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan">{enabled ? "Open" : "Off"}</span>
+      <span className="text-[13px] font-semibold text-[var(--accent)]">{enabled ? "Open" : "Off"}</span>
     </button>
   );
 }

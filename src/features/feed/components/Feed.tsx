@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { signIn, signOut } from "next-auth/react";
-import { SiteNav } from "@/components/SiteNav";
+import { AppChrome } from "@/components/AppChrome";
+import { FeedSkeleton } from "@/components/Skeleton";
+import { useUiPrefs } from "@/components/UiPrefs";
 import { rankToday } from "@/lib/rank";
 import type { Item, Source } from "@/lib/types";
 import {
@@ -159,26 +161,22 @@ export default function Feed({ initialItems, user, config }: Props) {
 
   const displayName = profile.name.trim();
   const openReason = open ? fitReason(open, profile) : null;
+  const { mobilePreview } = useUiPrefs();
 
-  return (
-    <div className="min-h-dvh bg-[#070708] text-ink">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-[#070708]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
-          <div className="flex items-baseline gap-3">
-            <h1 className="font-display text-4xl leading-none tracking-tight">Y</h1>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-500">
+  const headerExtra = (
+        <>
+          <div className="mx-auto flex max-w-[600px] items-center justify-between gap-2 px-4 pb-2">
+            <p className="truncate text-[13px] text-[var(--text-muted)]">
               {displayName ? `${displayName} · New Haven` : "New Haven"}
             </p>
+            <div className="flex items-center gap-1.5">
+              <HeaderBtn onClick={spin}>Spin</HeaderBtn>
+              <HeaderBtn onClick={() => { setTab("you"); }}>Tune</HeaderBtn>
+              <HeaderBtn onClick={() => void refresh()}>Refresh</HeaderBtn>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <HeaderBtn onClick={spin}>Spin</HeaderBtn>
-            <HeaderBtn onClick={() => { setTab("you"); }}>Tune</HeaderBtn>
-            <HeaderBtn onClick={() => void refresh()}>Refresh</HeaderBtn>
-          </div>
-        </div>
-        <SiteNav current="/" />
-        {tab === "foryou" && (
-          <div className="mx-auto max-w-5xl px-4 pb-3">
+          {ready && tab === "foryou" && (
+          <div className="mx-auto max-w-[600px] px-4 pb-3">
             <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
               <DayButton active={day === null} onClick={() => setDay(null)} dow="ALL" num="·" count={items.filter((i) => i.category !== "Noise").length} />
               {days.map((chip) => (
@@ -198,8 +196,8 @@ export default function Feed({ initialItems, user, config }: Props) {
                   key={entry.id}
                   type="button"
                   onClick={() => setQuick(entry.id)}
-                  className={`shrink-0 border-b-2 pb-1 text-[12px] font-semibold uppercase tracking-[0.16em] ${
-                    quick === entry.id ? "border-cyan text-white" : "border-transparent text-neutral-500 hover:text-neutral-300"
+                  className={`shrink-0 border-b-2 pb-1 text-[13px] font-semibold ${
+                    quick === entry.id ? "border-[var(--accent)] text-[var(--text)]" : "border-transparent text-[var(--text-muted)] hover:text-[var(--text)]"
                   }`}
                 >
                   {entry.label}
@@ -212,8 +210,8 @@ export default function Feed({ initialItems, user, config }: Props) {
                   key={entry}
                   type="button"
                   onClick={() => setSource(entry)}
-                  className={`shrink-0 border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
-                    source === entry ? "border-white bg-white text-black" : "border-white/15 text-neutral-400 hover:border-white/40"
+                  className={`shrink-0 rounded-full border px-3 py-1 text-[12px] font-semibold ${
+                    source === entry ? "border-[var(--text)] bg-[var(--text)] text-[var(--bg)]" : "border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--hover)]"
                   }`}
                 >
                   {entry === "all" ? "All sources" : sourceLabel(entry)}
@@ -221,18 +219,22 @@ export default function Feed({ initialItems, user, config }: Props) {
               ))}
             </div>
           </div>
-        )}
-      </header>
+          )}
+        </>
+  );
 
-      <main className="mx-auto max-w-5xl space-y-8 px-4 pb-28 pt-6">
-        {tab === "foryou" && ready && !profile.tuned && (
+  return (
+    <AppChrome current="/" headerExtra={headerExtra} hideBottomPad>
+      <main className="mx-auto max-w-[600px] space-y-6 px-4 pb-28 pt-4">
+        {!ready ? <FeedSkeleton rows={4} /> : null}
+        {ready && tab === "foryou" && !profile.tuned && (
           <TuneBlock profile={profile} onChange={patch} onDone={() => patch((current) => ({ ...current, tuned: true }))} />
         )}
 
-        {tab === "foryou" && (
+        {ready && tab === "foryou" && (
           <>
             {relaxed && (
-              <p className="border border-white/10 px-4 py-3 text-sm text-neutral-300">
+              <p className="border border-[var(--border)] px-4 py-3 text-sm text-[var(--text-muted)]">
                 Nothing on this cut matches your list. Showing the rest of campus.
               </p>
             )}
@@ -254,13 +256,13 @@ export default function Feed({ initialItems, user, config }: Props) {
             {(grid.length > 0 || (!hero && rail.length === 0)) && (
             <section>
               <div className="mb-4 flex items-end justify-between">
-                <h2 className="text-[11px] font-semibold uppercase tracking-[0.22em] text-neutral-500">
+                <h2 className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--text-muted)]">
                   {quick === "foryou" ? "After that" : QUICKS.find((q) => q.id === quick)?.label}
                 </h2>
-                <span className="text-[11px] uppercase tracking-[0.16em] text-neutral-600">{grid.length}</span>
+                <span className="text-[11px] uppercase tracking-[0.16em] text-[var(--text-faint)]">{grid.length}</span>
               </div>
               {grid.length === 0 ? (
-                <p className="border border-white/10 px-4 py-8 text-center text-sm text-neutral-400">Nothing on this cut.</p>
+                <p className="border border-[var(--border)] px-4 py-8 text-center text-sm text-[var(--text-muted)]">Nothing on this cut.</p>
               ) : (
                 <div className="grid gap-x-6 gap-y-10 sm:grid-cols-2">
                   {grid.map((item) => (
@@ -284,14 +286,14 @@ export default function Feed({ initialItems, user, config }: Props) {
           </>
         )}
 
-        {tab === "tonight" && (
+        {ready && tab === "tonight" && (
           <section className="space-y-8">
             <div>
-              <h2 className="font-display text-6xl leading-none">Tonight</h2>
-              <p className="mt-2 text-sm text-neutral-400">The next six hours, free food first.</p>
+              <h2 className="text-[28px] font-extrabold tracking-tight">Tonight</h2>
+              <p className="mt-2 text-sm text-[var(--text-muted)]">The next six hours, free food first.</p>
             </div>
             {tonight.length === 0 ? (
-              <p className="border border-white/10 px-4 py-8 text-sm text-neutral-400">Quiet window. Check the wall.</p>
+              <p className="border border-[var(--border)] px-4 py-8 text-sm text-[var(--text-muted)]">Quiet window. Check the wall.</p>
             ) : (
               tonight.map((item) => (
                 <ItemCard
@@ -312,14 +314,14 @@ export default function Feed({ initialItems, user, config }: Props) {
           </section>
         )}
 
-        {tab === "tickets" && (
+        {ready && tab === "tickets" && (
           <section className="space-y-6">
             <div>
-              <h2 className="font-display text-6xl leading-none">Tickets</h2>
-              <p className="mt-2 text-sm text-neutral-400">Things you said you&apos;re going to, and the ones you saved.</p>
+              <h2 className="text-[28px] font-extrabold tracking-tight">Tickets</h2>
+              <p className="mt-2 text-sm text-[var(--text-muted)]">Things you said you&apos;re going to, and the ones you saved.</p>
             </div>
             {tickets.length === 0 ? (
-              <p className="border border-white/10 px-4 py-8 text-sm text-neutral-400">
+              <p className="border border-[var(--border)] px-4 py-8 text-sm text-[var(--text-muted)]">
                 Nothing in your pocket. Hit I&apos;m going on a flyer.
               </p>
             ) : (
@@ -343,7 +345,7 @@ export default function Feed({ initialItems, user, config }: Props) {
           </section>
         )}
 
-        {tab === "you" && (
+        {ready && tab === "you" && (
           <YouPanel
             profile={profile}
             user={user}
@@ -358,7 +360,7 @@ export default function Feed({ initialItems, user, config }: Props) {
       </main>
 
       {open && (
-        <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/80 p-3 sm:items-center" onClick={() => setOpen(null)}>
+        <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/70 p-3 sm:items-center" onClick={() => setOpen(null)}>
           <div onClick={(event) => event.stopPropagation()} className="max-h-[92dvh] w-full max-w-md overflow-y-auto">
             <TicketBody
               item={open}
@@ -379,20 +381,26 @@ export default function Feed({ initialItems, user, config }: Props) {
       )}
 
       {toast && (
-        <div className="fixed bottom-24 left-1/2 z-30 -translate-x-1/2 border border-white/15 bg-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em]">
+        <div className="fixed bottom-24 left-1/2 z-30 -translate-x-1/2 border border-[var(--border)] bg-black px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em]">
           {toast}
         </div>
       )}
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-[#070708]/95 backdrop-blur">
-        <div className="mx-auto grid max-w-5xl grid-cols-4 pb-[env(safe-area-inset-bottom)]">
+      {ready ? (
+      <nav
+        className={`z-30 border-t border-[var(--border)] bg-[var(--bg-elevated)]/95 backdrop-blur-md ${
+          mobilePreview ? "sticky bottom-0" : "fixed inset-x-0 bottom-0"
+        }`}
+      >
+        <div className="mx-auto grid max-w-[600px] grid-cols-4 pb-[env(safe-area-inset-bottom)]">
           <NavButton active={tab === "foryou"} onClick={() => setTab("foryou")} label="For you" />
           <NavButton active={tab === "tonight"} onClick={() => setTab("tonight")} label="Tonight" />
           <NavButton active={tab === "tickets"} onClick={() => setTab("tickets")} label="Tickets" count={tickets.length} />
           <NavButton active={tab === "you"} onClick={() => setTab("you")} label="You" />
         </div>
       </nav>
-    </div>
+      ) : null}
+    </AppChrome>
   );
 }
 
@@ -401,7 +409,7 @@ function HeaderBtn({ children, onClick }: { children: React.ReactNode; onClick: 
     <button
       type="button"
       onClick={onClick}
-      className="border border-white/15 px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-200 hover:border-white/50"
+      className="rounded-full border border-[var(--border)] px-2.5 py-1 text-[12px] font-semibold text-[var(--text-muted)] hover:bg-[var(--hover)] hover:text-[var(--text)]"
     >
       {children}
     </button>
@@ -425,11 +433,11 @@ function DayButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex w-12 shrink-0 flex-col items-center py-1.5 ${active ? "bg-white text-black" : "text-neutral-400 hover:text-white"}`}
+      className={`flex w-12 shrink-0 flex-col items-center rounded-xl py-1.5 ${active ? "bg-[var(--text)] text-[var(--bg)]" : "text-[var(--text-muted)] hover:bg-[var(--hover)] hover:text-[var(--text)]"}`}
     >
       <span className="text-[9px] font-semibold tracking-[0.16em]">{dow}</span>
-      <span className="font-display text-2xl leading-none">{num}</span>
-      <span className={`text-[9px] ${active ? "text-black/60" : "text-neutral-600"}`}>{count || "·"}</span>
+      <span className="text-xl font-extrabold leading-none">{num}</span>
+      <span className={`text-[9px] ${active ? "opacity-60" : "text-[var(--text-faint)]"}`}>{count || "·"}</span>
     </button>
   );
 }
@@ -449,7 +457,7 @@ function NavButton({
     <button
       type="button"
       onClick={onClick}
-      className={`py-3 text-[11px] font-semibold uppercase tracking-[0.16em] ${active ? "text-cyan" : "text-neutral-500"}`}
+      className={`py-3 text-[13px] font-semibold ${active ? "text-[var(--accent)]" : "text-[var(--text-muted)]"}`}
     >
       {label}
       {count ? ` ${count}` : ""}
@@ -467,11 +475,11 @@ function TuneBlock({
   onDone: () => void;
 }) {
   return (
-    <section className="border border-white/10">
+    <section className="border border-[var(--border)]">
       <div className="px-4 py-5 sm:px-6">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan">Tune Y</p>
-        <h2 className="mt-2 max-w-[14ch] font-display text-6xl leading-[0.85]">What are you leaving your room for?</h2>
-        <p className="mt-3 max-w-md text-sm text-neutral-400">Pick a few. The wall reorders around them, and your college floats its own stuff up.</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">Tune Y</p>
+        <h2 className="mt-2 max-w-[14ch] text-[32px] font-extrabold leading-[0.95] tracking-tight">What are you leaving your room for?</h2>
+        <p className="mt-3 max-w-md text-sm text-[var(--text-muted)]">Pick a few. The wall reorders around them, and your college floats its own stuff up.</p>
         <div className="no-scrollbar -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 sm:-mx-6 sm:px-6">
           {COLLEGES.map((college) => {
             const on = profile.college === college;
@@ -481,7 +489,7 @@ function TuneBlock({
                 type="button"
                 onClick={() => onChange({ ...profile, college: on ? null : college })}
                 className={`shrink-0 border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${
-                  on ? "border-white bg-white text-black" : "border-white/15 text-neutral-400"
+                  on ? "border-white bg-white text-black" : "border-[var(--border)] text-[var(--text-muted)]"
                 }`}
               >
                 {college}
@@ -499,20 +507,20 @@ function TuneBlock({
               type="button"
               onClick={() => onChange((current) => toggleNeed(current, need.id))}
               className="min-h-32 border border-black/40 px-3 py-3 text-left"
-              style={{ background: need.bg, color: need.fg, outline: on ? "2px solid #20CCEE" : undefined, outlineOffset: "-2px" }}
+              style={{ background: need.bg, color: need.fg, outline: on ? "2px solid var(--accent)" : undefined, outlineOffset: "-2px" }}
             >
               <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] opacity-70">{on ? "On your list" : "Add"}</span>
-              <span className="mt-3 block font-display text-3xl leading-none">{need.label}</span>
+              <span className="mt-3 block text-2xl font-extrabold leading-none">{need.label}</span>
               <span className="mt-2 block text-xs opacity-75">{need.sub}</span>
             </button>
           );
         })}
       </div>
       <div className="flex flex-wrap gap-2 px-4 py-4">
-        <button type="button" onClick={onDone} className="bg-cyan px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-black">
+        <button type="button" onClick={onDone} className="rounded-full bg-[var(--accent)] px-4 py-2 text-[13px] font-bold text-white">
           Build my night
         </button>
-        <button type="button" onClick={onDone} className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400">
+        <button type="button" onClick={onDone} className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
           Show everything
         </button>
       </div>
@@ -542,22 +550,22 @@ function YouPanel({
   return (
     <section className="space-y-10">
       <div>
-        <h2 className="font-display text-6xl leading-none">You</h2>
-        <p className="mt-2 max-w-md text-sm text-neutral-400">This stays on this phone. It only changes the order of the wall.</p>
+        <h2 className="text-[28px] font-extrabold tracking-tight">You</h2>
+        <p className="mt-2 max-w-md text-sm text-[var(--text-muted)]">This stays on this phone. It only changes the order of the wall.</p>
       </div>
 
       <label className="block">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Name on the list</span>
+        <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Name on the list</span>
         <input
           value={profile.name}
           onChange={(event) => onChange({ ...profile, name: event.target.value, tuned: true })}
           placeholder="What should we call you"
-          className="mt-2 w-full border border-white/15 bg-transparent px-3 py-3 text-lg outline-none placeholder:text-neutral-600 focus:border-cyan"
+          className="mt-2 w-full border border-[var(--border)] bg-transparent px-3 py-3 text-lg outline-none placeholder:text-[var(--text-faint)] focus:border-[var(--accent)]"
         />
       </label>
 
       <div>
-        <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Needs</h3>
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Needs</h3>
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
           {NEEDS.map((need) => {
             const on = profile.needs.includes(need.id);
@@ -573,7 +581,7 @@ function YouPanel({
                   borderColor: on ? need.bg : "rgba(255,255,255,0.15)",
                 }}
               >
-                <span className="block font-display text-2xl leading-none">{need.label}</span>
+                <span className="block text-xl font-extrabold leading-none">{need.label}</span>
                 <span className="mt-1 block text-[11px] uppercase tracking-[0.12em] opacity-70">{need.sub}</span>
               </button>
             );
@@ -582,7 +590,7 @@ function YouPanel({
       </div>
 
       <div>
-        <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Finer cuts</h3>
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Finer cuts</h3>
         <div className="mt-3 flex flex-wrap gap-2">
           {INTERESTS.map((interest) => {
             const on = profile.interests.includes(interest.id);
@@ -592,7 +600,7 @@ function YouPanel({
                 type="button"
                 onClick={() => onChange((current) => ({ ...toggleInterest(current, interest.id), tuned: true }))}
                 className={`border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] ${
-                  on ? "border-cyan bg-cyan text-black" : "border-white/15 text-neutral-300"
+                  on ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--border)] text-[var(--text-muted)]"
                 }`}
               >
                 {interest.label}
@@ -603,13 +611,13 @@ function YouPanel({
       </div>
 
       <div>
-        <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">College</h3>
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">College</h3>
         <div className="mt-3 flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => onChange({ ...profile, college: null, tuned: true })}
             className={`border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] ${
-              profile.college === null ? "border-white bg-white text-black" : "border-white/15 text-neutral-400"
+              profile.college === null ? "border-white bg-white text-black" : "border-[var(--border)] text-[var(--text-muted)]"
             }`}
           >
             Any
@@ -620,7 +628,7 @@ function YouPanel({
               type="button"
               onClick={() => onChange({ ...profile, college, tuned: true })}
               className={`border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] ${
-                profile.college === college ? "border-white bg-white text-black" : "border-white/15 text-neutral-400"
+                profile.college === college ? "border-white bg-white text-black" : "border-[var(--border)] text-[var(--text-muted)]"
               }`}
             >
               {college}
@@ -630,13 +638,13 @@ function YouPanel({
       </div>
 
       <div>
-        <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Account</h3>
-        <div className="mt-3 divide-y divide-white/10 border border-white/10">
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Account</h3>
+        <div className="mt-3 divide-y divide-[var(--border)] border border-[var(--border)]">
           {user ? (
             <>
               <div className="px-4 py-3">
                 <p className="text-sm">{user.email}</p>
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-[var(--text-muted)]">
                   {user.provider === "google" ? "Gmail" : user.provider === "azure-ad" ? "Outlook" : "Email and password"}
                 </p>
               </div>
@@ -646,27 +654,27 @@ function YouPanel({
             <Link href="/login" className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left">
               <span>
                 <span className="block text-sm">Sign in</span>
-                <span className="block text-xs text-neutral-500">Email, Gmail, or Outlook</span>
+                <span className="block text-xs text-[var(--text-muted)]">Email, Gmail, or Outlook</span>
               </span>
-              <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan">Open</span>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">Open</span>
             </Link>
           )}
         </div>
       </div>
 
       <div>
-        <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Sources</h3>
-        <div className="mt-3 divide-y divide-white/10 border border-white/10">
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Sources</h3>
+        <div className="mt-3 divide-y divide-[var(--border)] border border-[var(--border)]">
           {user && (user.provider === "google" || user.provider === "azure-ad") ? (
             <SourceRow
-              title={busy === "Email" ? "Syncing mail" : "Sync listservs"}
+              title={busy === "Email" ? "Syncing mail" : "Sync email"}
               detail={user.email}
               enabled
               onClick={() => onSync("/api/ingest/email", "Email")}
             />
           ) : (
             <>
-              <SourceRow title="Connect Gmail" detail={config.google ? "Read-only listservs" : "Needs Google keys"} enabled={config.google} onClick={() => onSignIn("google")} />
+              <SourceRow title="Connect Gmail" detail={config.google ? "Read-only campus email" : "Needs Google keys"} enabled={config.google} onClick={() => onSignIn("google")} />
               <SourceRow title="Connect Outlook" detail={config.microsoft ? "Yale or personal" : "Needs Microsoft keys"} enabled={config.microsoft} onClick={() => onSignIn("azure-ad")} />
             </>
           )}
@@ -677,11 +685,11 @@ function YouPanel({
             onClick={() => onSync("/api/ingest/yaleconnect", "YaleConnect")}
           />
           <div className="px-4 py-3">
-            <p className="text-sm">Fizz</p>
-            <p className="text-xs text-neutral-500">Your friend posts into /api/ingest/fizz. Sample posts are already on the wall.</p>
+            <p className="text-sm">Fixx</p>
+            <p className="text-xs text-[var(--text-muted)]">Fixx summary uses mock posts. Demo items may also appear on the wall.</p>
           </div>
         </div>
-        <p className="mt-3 text-[11px] uppercase tracking-[0.14em] text-neutral-600">
+        <p className="mt-3 text-[11px] uppercase tracking-[0.14em] text-[var(--text-faint)]">
           Tagging {config.llm ? "with a model" : "offline"} · store {config.store}
           {config.demo ? " · sample data on" : ""}
         </p>
@@ -691,7 +699,7 @@ function YouPanel({
         <button
           type="button"
           onClick={() => onChange({ ...profile, hidden: [] })}
-          className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400"
+          className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]"
         >
           Bring back {profile.hidden.length} passed {profile.hidden.length === 1 ? "flyer" : "flyers"}
         </button>
@@ -720,9 +728,9 @@ function SourceRow({
     >
       <span>
         <span className="block text-sm">{title}</span>
-        <span className="block text-xs text-neutral-500">{detail}</span>
+        <span className="block text-xs text-[var(--text-muted)]">{detail}</span>
       </span>
-      <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan">{enabled ? "Open" : "Off"}</span>
+      <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">{enabled ? "Open" : "Off"}</span>
     </button>
   );
 }

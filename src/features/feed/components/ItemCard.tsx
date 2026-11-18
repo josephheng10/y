@@ -44,7 +44,7 @@ export default function ItemCard({
 
   if (layout === "hero") {
     return (
-      <article className="overflow-hidden border border-white/10">
+      <article className="overflow-hidden border border-[var(--border)]">
         <button type="button" onClick={onOpen} className="block w-full text-left">
           <div className="relative min-h-[22rem] px-5 pb-6 pt-5 sm:min-h-[26rem]" style={{ background: skin.bg, color: skin.fg }}>
             <div className="flex items-start justify-between text-[11px] font-semibold uppercase tracking-[0.22em]">
@@ -89,8 +89,8 @@ export default function ItemCard({
         <div className="flex items-baseline justify-between gap-3">
           <h3 className="text-[17px] font-semibold leading-snug tracking-tight">{item.title}</h3>
         </div>
-        <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-neutral-400">{item.summary}</p>
-        <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-500">
+        <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-[var(--text-muted)]">{item.summary}</p>
+        <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
           {when}
           {item.location ? ` · ${item.location}` : ""}
           {` · ${sourceLabel(item.source)}`}
@@ -135,7 +135,7 @@ function PosterFace({
         <span style={{ color: skin.accent }}>{skin.vibe}</span>
       </div>
       <h3 className={`mt-4 font-display uppercase leading-[0.86] tracking-tight ${compact ? "line-clamp-5 text-[1.7rem]" : "line-clamp-6 text-[2.6rem]"}`}>
-        {item.title.replace(/^\[Sample Fizz\]\s*/i, "")}
+        {item.title.replace(/^\[Sample (?:Fizz|Fixx)\]\s*/i, "")}
       </h3>
       <div className="mt-auto flex items-end justify-between gap-2 pt-4 text-[10px] font-semibold uppercase tracking-[0.16em]">
         <span className="line-clamp-2">{item.location ?? "New Haven"}</span>
@@ -171,7 +171,7 @@ function ActionBar({
   return (
     <div className="mt-3">
       {(reason || note) && (
-        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan">{note ?? `Fits ${reason}`}</p>
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">{note ?? `Fits ${reason}`}</p>
       )}
       <div className="flex items-center gap-2">
         <button
@@ -186,17 +186,17 @@ function ActionBar({
         <button
           type="button"
           onClick={onSave}
-          className={`px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] ${saved ? "text-cyan" : "text-neutral-300"}`}
+          className={`px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] ${saved ? "text-[var(--accent)]" : "text-[var(--text-muted)]"}`}
         >
           {saved ? "Saved" : "Save"}
         </button>
-        <button type="button" onClick={onShare} className="px-1 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
+        <button type="button" onClick={onShare} className="px-1 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
           Share
         </button>
-        <button type="button" onClick={onOpen} className="px-1 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
+        <button type="button" onClick={onOpen} className="px-1 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
           Ticket
         </button>
-        <button type="button" onClick={onHide} className="ml-auto px-1 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-600">
+        <button type="button" onClick={onHide} className="ml-auto px-1 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-faint)]">
           Pass
         </button>
       </div>
@@ -221,7 +221,7 @@ function TextBtn({
       className={`border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] transition ${
         active
           ? "border-cyan bg-cyan text-black"
-          : "border-white/15 text-neutral-300 hover:border-white/40 hover:text-white"
+          : "border-[var(--border)] text-[var(--text-muted)] hover:border-white/40 hover:text-white"
       }`}
     >
       {children}
@@ -253,7 +253,7 @@ export function TicketBody({
   const skin = posterFor(item);
   const parts = dayParts(item.starts_at);
   return (
-    <div className="w-full max-w-md border border-white/10 bg-[#0c0c0d]">
+    <div className="w-full max-w-md border border-[var(--border)] bg-[#0c0c0d]">
       <div className="relative px-5 pb-8 pt-5" style={{ background: skin.bg, color: skin.fg }}>
         <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.2em]">
           <span>Y · New Haven</span>
@@ -269,26 +269,26 @@ export function TicketBody({
         <p className="mt-3 max-w-sm text-sm leading-relaxed opacity-80">{item.summary}</p>
       </div>
       <div className="poster-stub border-y border-dashed border-white/20 px-5 py-4">
-        <dl className="grid grid-cols-2 gap-3 text-[11px] uppercase tracking-[0.16em] text-neutral-400">
+        <dl className="grid grid-cols-2 gap-3 text-[11px] uppercase tracking-[0.16em] text-[var(--text-muted)]">
           <div>
             <dt>Where</dt>
-            <dd className="mt-1 text-sm normal-case tracking-normal text-ink">{item.location ?? "New Haven"}</dd>
+            <dd className="mt-1 text-sm normal-case tracking-normal text-[var(--text)]">{item.location ?? "New Haven"}</dd>
           </div>
           <div>
             <dt>From</dt>
-            <dd className="mt-1 text-sm normal-case tracking-normal text-ink">{sourceLabel(item.source)}</dd>
+            <dd className="mt-1 text-sm normal-case tracking-normal text-[var(--text)]">{sourceLabel(item.source)}</dd>
           </div>
           <div>
             <dt>Ref</dt>
-            <dd className="mt-1 font-mono text-sm tracking-normal text-ink">{refCode(item.id)}</dd>
+            <dd className="mt-1 font-mono text-sm tracking-normal text-[var(--text)]">{refCode(item.id)}</dd>
           </div>
           <div>
             <dt>Door</dt>
-            <dd className="mt-1 text-sm normal-case tracking-normal text-ink">{item.starts_at ? relTime(item.starts_at) : "Unscheduled"}</dd>
+            <dd className="mt-1 text-sm normal-case tracking-normal text-[var(--text)]">{item.starts_at ? relTime(item.starts_at) : "Unscheduled"}</dd>
           </div>
         </dl>
-        {item.demo && <p className="mt-3 text-[10px] uppercase tracking-[0.18em] text-neutral-600">Sample flyer. Not a real ticket.</p>}
-        {reason && <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan">Fits {reason}</p>}
+        {item.demo && <p className="mt-3 text-[10px] uppercase tracking-[0.18em] text-[var(--text-faint)]">Sample flyer. Not a real ticket.</p>}
+        {reason && <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">Fits {reason}</p>}
       </div>
       <div className="flex flex-wrap gap-2 px-5 py-4">
         <TextBtn onClick={onGoing} active={going}>
@@ -303,7 +303,7 @@ export function TicketBody({
             href={item.url}
             target="_blank"
             rel="noreferrer"
-            className="border border-white/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-300 hover:border-white/40 hover:text-white"
+            className="border border-[var(--border)] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)] hover:border-white/40 hover:text-white"
           >
             Original
           </a>

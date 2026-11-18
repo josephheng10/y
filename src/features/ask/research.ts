@@ -1,8 +1,7 @@
 import { listInfo } from "@/features/info/data";
-import { fizzDbPath } from "@/lib/fizz";
+import { answerFixxQuestion, FIXX_MOCK_POSTS } from "@/features/fixx/mock";
 import { formatWhen } from "@/lib/format";
 import { listItems } from "@/lib/store";
-import { DatabaseSync } from "node:sqlite";
 
 export type ResearchSource = {
   kind: "post" | "event" | "info";
@@ -22,42 +21,10 @@ const STOP = new Set([
   "a", "an", "and", "are", "at", "be", "do", "for", "from", "going", "how", "i", "in", "is", "it",
   "me", "of", "on", "or", "tell", "that", "the", "there", "this", "to", "tonight", "tn", "today",
   "what", "whats", "what's", "when", "where", "which", "who", "with", "you", "we", "any", "about",
-  "happening", "going", "check", "please", "some",
+  "happening", "please", "some",
 ]);
 
-const PARTY = [
-  "party", "parties", "rave", "formal", "mixer", "darty", "pregame", "afterparty", "after party",
-  "semiformal", "semi formal", "function", "flyer", "adphi", "toads", "tonight", "tn",
-];
-
 const PLAN = /\b(party|parties|rave|formal|mixer|darty|pregame|afterparty|flyer|adphi|toads|function|semiformal|tonight|\btn\b)\b/i;
-const FORWARD = /\b(tonight|\btn\b|this weekend|friday|saturday|flyer|doors at|come to|pulling up)\b/i;
-const LOOKING_BACK = /\b(last year|last night|was so|went to|proves)\b/i;
-const TIME_HINT = /\b(\d{1,2}(?::\d{2})?\s*(?:am|pm)|tonight|\btn\b|doors)\b/i;
-
-type PostRow = {
-  post_key: string;
-  body: string;
-  displayed_age: string | null;
-  first_seen_at: string;
-  author_label: string | null;
-  community: string | null;
-};
-
-function ageToMs(age: string | null): number | null {
-  if (!age) return null;
-  const match = age.trim().toLowerCase().match(/^(\d+)\s*(m|min|h|hr|hrs|d|w|wk|wks|mo|y|yr)s?$/);
-  if (!match) return null;
-  const amount = Number(match[1]);
-  const unit = match[2];
-  const hour = 60 * 60 * 1000;
-  if (unit === "m" || unit === "min") return amount * 60 * 1000;
-  if (unit === "h" || unit === "hr" || unit === "hrs") return amount * hour;
-  if (unit === "d") return amount * 24 * hour;
-  if (unit === "w" || unit === "wk" || unit === "wks") return amount * 7 * 24 * hour;
-  if (unit === "mo") return amount * 30 * 24 * hour;
-  return amount * 365 * 24 * hour;
-}
 
 function tokens(text: string): string[] {
   return [...new Set(text.toLowerCase().match(/[a-z0-9']{2,}/g) ?? [])].filter((word) => !STOP.has(word));
@@ -72,80 +39,57 @@ function excerpt(body: string): string {
   return flat.length > 220 ? `${flat.slice(0, 217)}…` : flat;
 }
 
-function loadPosts(): PostRow[] {
-  const db = new DatabaseSync(fizzDbPath(), { readOnly: true });
-  try {
-    return db.prepare(
-      `SELECT post_key, body, displayed_age, first_seen_at, author_label, community
-       FROM posts
-       WHERE body IS NOT NULL AND length(trim(body)) > 0`,
-    ).all() as PostRow[];
-  } finally {
-    db.close();
-  }
-}
-
-function latestSeen(posts: PostRow[]): Date | null {
-  let latest = 0;
-  for (const post of posts) {
-    const time = Date.parse(post.first_seen_at);
-    if (time > latest) latest = time;
-  }
-  return latest ? new Date(latest) : null;
-}
-
+/** Ask chatbot — works entirely on mock Fixx + in-memory/demo store items. */
 export async function researchQuestion(question: string): Promise<ResearchAnswer> {
   const asked = question.trim().slice(0, 400);
   const words = tokens(asked);
   const aboutParties = partyQuestion(asked);
-  const posts = loadPosts();
-  const newest = latestSeen(posts);
   const now = new Date();
-  const catalogIsStale = newest != null && now.getTime() - newest.getTime() > 3 * 24 * 60 * 60 * 1000;
-  const reference = catalogIsStale && newest ? newest : now;
-  const recentWindow = 3 * 24 * 60 * 60 * 1000;
 
-  const ranked = posts
-    .map((post) => {
-      const age = ageToMs(post.displayed_age);
-      const seen = Date.parse(post.first_seen_at);
-      const postedAt = Number.isNaN(seen) ? null : seen - (age ?? 0);
-      const recent = postedAt != null && reference.getTime() - postedAt <= recentWindow && reference.getTime() - postedAt >= -6 * 60 * 60 * 1000;
-      const haystack = post.body.toLowerCase();
-      const wordHits = words.filter((word) => haystack.includes(word)).length;
-      const partyHits = PARTY.filter((word) => haystack.includes(word)).length;
-      let score = wordHits * 3;
-      if (aboutParties) score += partyHits * 2;
-      if (PLAN.test(post.body) && TIME_HINT.test(post.body)) score += 3;
-      if (FORWARD.test(post.body)) score += 4;
-      if (LOOKING_BACK.test(post.body)) score -= 8;
-      if (aboutParties && partyHits === 0 && !PLAN.test(post.body)) score = 0;
-      if (!aboutParties && wordHits === 0) score = 0;
-      if (recent && score > 0) score += 6;
-      if (aboutParties && !recent) score = Math.min(score, 2);
-      return { post, score, recent, postedAt };
-    })
-    .filter((item) => item.score >= (aboutParties ? 6 : 3))
-    .sort((a, b) => b.score - a.score || (b.postedAt ?? 0) - (a.postedAt ?? 0));
-  const seenExcerpts = new Set<string>();
-  const uniqueRanked = ranked.filter((item) => {
-    const key = excerpt(item.post.body).toLowerCase();
-    if (seenExcerpts.has(key)) return false;
-    seenExcerpts.add(key);
-    return true;
-  }).slice(0, 8);
+  const fixx = answerFixxQuestion(asked);
+  const postSources: ResearchSource[] = fixx.sources.map((source) => {
+    const post = FIXX_MOCK_POSTS.find((p) => p.id === source.id);
+    return {
+      kind: "post" as const,
+      title: source.title,
+      excerpt: source.excerpt,
+      href: source.href,
+      when: post?.age ?? null,
+    };
+  });
+
+  // If keyword scoring found nothing but Fixx chat did, keep those; otherwise also
+  // scan the full mock feed for party/food matches when the question is open-ended.
+  if (postSources.length === 0) {
+    const fallback = FIXX_MOCK_POSTS.filter((post) => {
+      const hay = `${post.body} ${post.tags.join(" ")}`.toLowerCase();
+      if (aboutParties) return post.tags.some((t) => ["party", "nightlife", "formal", "toads"].includes(t));
+      return words.some((word) => hay.includes(word));
+    }).slice(0, 4);
+    for (const post of fallback) {
+      postSources.push({
+        kind: "post",
+        title: `${post.author} · ${post.community}`,
+        excerpt: excerpt(post.body),
+        href: `/posts?q=${encodeURIComponent(post.body.slice(0, 48))}`,
+        when: post.age,
+      });
+    }
+  }
 
   const events = await listItems();
   const eventSources: ResearchSource[] = events
     .filter((event) => {
       const start = event.starts_at ? Date.parse(event.starts_at) : Number.NaN;
-      const soon = !Number.isNaN(start) && start - now.getTime() > -2 * 60 * 60 * 1000 && start - now.getTime() < 18 * 60 * 60 * 1000;
-      const nearCatalog = !Number.isNaN(start) && Math.abs(start - reference.getTime()) < 36 * 60 * 60 * 1000;
+      const soon =
+        !Number.isNaN(start) &&
+        start - now.getTime() > -2 * 60 * 60 * 1000 &&
+        start - now.getTime() < 48 * 60 * 60 * 1000;
       const text = `${event.title} ${event.summary} ${event.location ?? ""}`;
       const wordHits = words.filter((word) => text.toLowerCase().includes(word)).length;
       const plan = PLAN.test(text);
-      if (aboutParties) return (soon || nearCatalog) && plan;
-      return wordHits > 0;
+      if (aboutParties) return (soon || plan) && (plan || wordHits > 0);
+      return wordHits > 0 || (soon && plan);
     })
     .slice(0, 4)
     .map((event) => ({
@@ -173,55 +117,39 @@ export async function researchQuestion(question: string): Promise<ResearchAnswer
       when: guide.category,
     }));
 
-  const postSources: ResearchSource[] = uniqueRanked.map(({ post }) => ({
-    kind: "post",
-    title: post.author_label ?? post.community ?? "Yale",
-    excerpt: excerpt(post.body),
-    href: `/posts?q=${encodeURIComponent(excerpt(post.body).slice(0, 80))}`,
-    when: post.displayed_age ? `${post.displayed_age} when captured ${formatWhen(post.first_seen_at)}` : formatWhen(post.first_seen_at),
-  }));
-
   const sources = [...postSources, ...eventSources, ...infoSources];
-  const asOf = newest ? formatWhen(newest.toISOString()) : null;
-  const answer = writeAnswer({ asked, aboutParties, catalogIsStale, asOf, postSources, eventSources, infoSources });
+  const asOf = "mock Fixx summary";
+  const answer = writeAnswer({ asked, aboutParties, postSources, eventSources, infoSources });
   return { answer, sources, asOf };
 }
 
 function writeAnswer(input: {
   asked: string;
   aboutParties: boolean;
-  catalogIsStale: boolean;
-  asOf: string | null;
   postSources: ResearchSource[];
   eventSources: ResearchSource[];
   infoSources: ResearchSource[];
 }): string {
-  const stale = input.catalogIsStale && input.asOf
-    ? input.aboutParties
-      ? `The Fizz catalog's newest capture is ${input.asOf}, so "tonight" means that night in the catalog.`
-      : `The Fizz catalog's newest capture is ${input.asOf}.`
-    : input.asOf
-      ? `Looking at the Fizz catalog as of ${input.asOf}.`
-      : "Looking at the Fizz catalog.";
+  const lead = "Using Y's mock Fixx summary plus demo events and info.";
 
   if (input.aboutParties) {
     if (input.postSources.length === 0 && input.eventSources.length === 0) {
-      return `${stale} I didn't find posts from the last few days that mention a party, flyer, or a plan for that night.`;
+      return `${lead} I didn't find party plans in the mock feed right now.`;
     }
     const lines = input.postSources.map((source, index) => `${index + 1}. ${source.excerpt}`);
     const events = input.eventSources.length
-      ? ` Listed events: ${input.eventSources.map((source) => `${source.title} (${source.when})`).join("; ")}.`
+      ? ` Listed events: ${input.eventSources.map((source) => `${source.title}${source.when ? ` (${source.when})` : ""}`).join("; ")}.`
       : "";
-    return `${stale} These posts from the last few days look like parties or plans:\n${lines.join("\n")}${events}`;
+    return `${lead} These look like parties or plans:\n${lines.join("\n")}${events}`;
   }
 
   if (input.postSources.length === 0 && input.eventSources.length === 0 && input.infoSources.length === 0) {
-    return `${stale} I didn't find posts, events, or info pages that match "${input.asked}".`;
+    return `${lead} I didn't find posts, events, or info pages that match "${input.asked}". Try parties, free food, careers, or dining.`;
   }
 
-  const parts = [stale];
+  const parts = [lead];
   if (input.postSources.length) {
-    parts.push(`Posts:\n${input.postSources.map((source, index) => `${index + 1}. ${source.excerpt}`).join("\n")}`);
+    parts.push(`Fixx:\n${input.postSources.map((source, index) => `${index + 1}. ${source.excerpt}`).join("\n")}`);
   }
   if (input.eventSources.length) {
     parts.push(`Events: ${input.eventSources.map((source) => source.title).join(", ")}.`);
