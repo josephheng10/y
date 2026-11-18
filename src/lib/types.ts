@@ -2,7 +2,12 @@
  * Shared Item type — every source (email listservs, YaleConnect, Fizz) is
  * normalized into this shape. Mirrors the `items` table in supabase/schema.sql.
  */
-export type Source = "email" | "yaleconnect" | "fizz";
+export const SOURCES = ["email", "yaleconnect", "fizz", "campus"] as const;
+export type Source = (typeof SOURCES)[number];
+
+export function isSource(x: unknown): x is Source {
+  return typeof x === "string" && (SOURCES as readonly string[]).includes(x);
+}
 
 export const CATEGORIES = [
   "Event",

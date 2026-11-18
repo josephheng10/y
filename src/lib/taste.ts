@@ -1,3 +1,4 @@
+import { followedBoost } from "./campus/catalog";
 import type { Category, Item } from "./types";
 
 /** What someone is actually trying to get out of a night at Yale. */
@@ -26,6 +27,8 @@ export interface Profile {
   going: string[];
   saved: string[];
   hidden: string[];
+  /** Catalog ids the digger should open. */
+  follows: string[];
   tuned: boolean;
 }
 
@@ -37,6 +40,7 @@ export const EMPTY_PROFILE: Profile = {
   going: [],
   saved: [],
   hidden: [],
+  follows: [],
   tuned: false,
 };
 
@@ -107,6 +111,7 @@ export function loadProfile(): Profile {
       going: Array.isArray(parsed.going) ? parsed.going : [],
       saved: Array.isArray(parsed.saved) ? parsed.saved : [],
       hidden: Array.isArray(parsed.hidden) ? parsed.hidden : [],
+      follows: Array.isArray(parsed.follows) ? parsed.follows.filter((id) => typeof id === "string") : [],
       college: typeof parsed.college === "string" ? parsed.college : null,
       name: typeof parsed.name === "string" ? parsed.name : "",
       tuned: Boolean(parsed.tuned),
@@ -151,6 +156,7 @@ export function tuneScore(item: Item, profile: Profile): number {
     if (itemMatchesInterest(item, id)) score += 34;
   }
   if (profile.college && blobOf(item).includes(profile.college.toLowerCase())) score += 48;
+  score += followedBoost(item, profile.follows);
   if (item.starts_at) {
     const hours = (Date.parse(item.starts_at) - Date.now()) / 3600000;
     if (hours >= -0.5 && hours <= 8) score += 22;
@@ -189,6 +195,13 @@ export function toggleNeed(profile: Profile, needId: string): Profile {
     needs: [...profile.needs, needId],
     interests: [...new Set([...profile.interests, ...need.interests])],
   };
+}
+
+export function toggleFollow(profile: Profile, sourceId: string): Profile {
+  const on = profile.follows.includes(sourceId);
+  if (on) return { ...profile, follows: profile.follows.filter((id) => id !== sourceId) };
+  if (profile.follows.length >= 24) return profile;
+  return { ...profile, follows: [...profile.follows, sourceId], tuned: true };
 }
 
 export function toggleInterest(profile: Profile, interestId: string): Profile {
@@ -246,5 +259,6 @@ export function refCode(id: string): string {
 export function sourceLabel(source: Item["source"]): string {
   if (source === "email") return "Listserv";
   if (source === "yaleconnect") return "YaleConnect";
+  if (source === "campus") return "Campus";
   return "Fizz";
 }

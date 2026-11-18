@@ -4,7 +4,7 @@
 create table if not exists public.items (
   id          text primary key,                       -- deterministic "<source>:<hash>" for idempotent upserts
   user_id     text,                                   -- owner email for private items (email); null = shared (YaleConnect, Fizz)
-  source      text not null check (source in ('email','yaleconnect','fizz')),
+  source      text not null check (source in ('email','yaleconnect','fizz','campus')),
   category    text not null check (category in ('Event','Free food','Opportunity','Club news','Noise')),
   title       text not null,
   summary     text not null default '',
@@ -23,6 +23,11 @@ create index if not exists items_category_idx  on public.items (category);
 -- The app talks to Supabase from server routes with the service-role key, so RLS
 -- is enabled with no public policies (anon/browser clients can't read anything).
 alter table public.items enable row level security;
+
+-- Existing projects: widen the source check so campus digests can be stored.
+alter table public.items drop constraint if exists items_source_check;
+alter table public.items add constraint items_source_check
+  check (source in ('email','yaleconnect','fizz','campus'));
 
 -- Optional housekeeping: drop items older than 30 days.
 -- select cron.schedule('prune-items', '0 4 * * *', $$delete from public.items where created_at < now() - interval '30 days'$$);

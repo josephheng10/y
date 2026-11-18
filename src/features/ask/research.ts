@@ -1,7 +1,8 @@
+import { summarizeEvidence } from "@/features/ask/summarize";
 import { listInfo } from "@/features/info/data";
 import { fizzDbPath } from "@/lib/fizz";
 import { formatWhen } from "@/lib/format";
-import { listItems } from "@/lib/store";
+import { loadHubItems } from "@/lib/hub-items";
 import { DatabaseSync } from "node:sqlite";
 
 export type ResearchSource = {
@@ -42,6 +43,7 @@ type PostRow = {
   first_seen_at: string;
   author_label: string | null;
   community: string | null;
+  media_reference: string | null;
 };
 
 function ageToMs(age: string | null): number | null {
@@ -76,7 +78,7 @@ function loadPosts(): PostRow[] {
   const db = new DatabaseSync(fizzDbPath(), { readOnly: true });
   try {
     return db.prepare(
-      `SELECT post_key, body, displayed_age, first_seen_at, author_label, community
+      `SELECT post_key, body, displayed_age, first_seen_at, author_label, community, media_reference
        FROM posts
        WHERE body IS NOT NULL AND length(trim(body)) > 0`,
     ).all() as PostRow[];
@@ -135,7 +137,8 @@ export async function researchQuestion(question: string): Promise<ResearchAnswer
     return true;
   }).slice(0, 8);
 
-  const events = await listItems();
+  const comments = loadComments(uniqueRanked.map(({ post }) => post.post_key));
+  const events = await loadHubItems();
   const eventSources: ResearchSource[] = events
     .filter((event) => {
       const start = event.starts_at ? Date.parse(event.starts_at) : Number.NaN;
@@ -183,51 +186,48 @@ export async function researchQuestion(question: string): Promise<ResearchAnswer
 
   const sources = [...postSources, ...eventSources, ...infoSources];
   const asOf = newest ? formatWhen(newest.toISOString()) : null;
-  const answer = writeAnswer({ asked, aboutParties, catalogIsStale, asOf, postSources, eventSources, infoSources });
+  const answer = await summarizeEvidence({
+    question: asked,
+    aboutParties,
+    asOf,
+    catalogIsStale,
+    posts: uniqueRanked.map(({ post }) => ({
+      body: post.body,
+      age: post.displayed_age,
+      flyer: flyerNote(post.media_reference),
+      comments: comments.get(post.post_key) ?? [],
+    })),
+    events: eventSources.map((source) => ({ title: source.title, excerpt: source.excerpt, when: source.when })),
+    info: infoSources.map((source) => ({ title: source.title, excerpt: source.excerpt })),
+  });
   return { answer, sources, asOf };
 }
 
-function writeAnswer(input: {
-  asked: string;
-  aboutParties: boolean;
-  catalogIsStale: boolean;
-  asOf: string | null;
-  postSources: ResearchSource[];
-  eventSources: ResearchSource[];
-  infoSources: ResearchSource[];
-}): string {
-  const stale = input.catalogIsStale && input.asOf
-    ? input.aboutParties
-      ? `The Fizz catalog's newest capture is ${input.asOf}, so "tonight" means that night in the catalog.`
-      : `The Fizz catalog's newest capture is ${input.asOf}.`
-    : input.asOf
-      ? `Looking at the Fizz catalog as of ${input.asOf}.`
-      : "Looking at the Fizz catalog.";
+function flyerNote(media: string | null): string | null {
+  if (!media || !media.trim() || /^https?:/i.test(media.trim())) return null;
+  const text = media.trim();
+  if (!/flyer|poster|invite|ticket|party|rave|formal|tonight/i.test(text)) return null;
+  return text.slice(0, 240);
+}
 
-  if (input.aboutParties) {
-    if (input.postSources.length === 0 && input.eventSources.length === 0) {
-      return `${stale} I didn't find posts from the last few days that mention a party, flyer, or a plan for that night.`;
+function loadComments(keys: string[]): Map<string, string[]> {
+  const grouped = new Map<string, string[]>();
+  if (keys.length === 0) return grouped;
+  const db = new DatabaseSync(fizzDbPath(), { readOnly: true });
+  try {
+    const marks = keys.map(() => "?").join(", ");
+    const rows = db.prepare(
+      `SELECT post_key, body FROM comments
+       WHERE post_key IN (${marks}) AND body IS NOT NULL AND length(trim(body)) > 0
+       ORDER BY first_seen_at`,
+    ).all(...keys) as { post_key: string; body: string }[];
+    for (const row of rows) {
+      const list = grouped.get(row.post_key) ?? [];
+      if (list.length < 4) list.push(row.body.trim());
+      grouped.set(row.post_key, list);
     }
-    const lines = input.postSources.map((source, index) => `${index + 1}. ${source.excerpt}`);
-    const events = input.eventSources.length
-      ? ` Listed events: ${input.eventSources.map((source) => `${source.title} (${source.when})`).join("; ")}.`
-      : "";
-    return `${stale} These posts from the last few days look like parties or plans:\n${lines.join("\n")}${events}`;
+  } finally {
+    db.close();
   }
-
-  if (input.postSources.length === 0 && input.eventSources.length === 0 && input.infoSources.length === 0) {
-    return `${stale} I didn't find posts, events, or info pages that match "${input.asked}".`;
-  }
-
-  const parts = [stale];
-  if (input.postSources.length) {
-    parts.push(`Posts:\n${input.postSources.map((source, index) => `${index + 1}. ${source.excerpt}`).join("\n")}`);
-  }
-  if (input.eventSources.length) {
-    parts.push(`Events: ${input.eventSources.map((source) => source.title).join(", ")}.`);
-  }
-  if (input.infoSources.length) {
-    parts.push(`Info: ${input.infoSources.map((source) => source.title).join(", ")}.`);
-  }
-  return parts.join("\n\n");
+  return grouped;
 }

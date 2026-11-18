@@ -16,23 +16,28 @@ export function itemId(source: string, externalId: string) {
   return `${source}:${h}`;
 }
 
-export async function tagMany(inputs: RawInput[], concurrency = 4): Promise<Item[]> {
+export async function tagMany(
+  inputs: RawInput[],
+  concurrency = 4,
+  opts?: { llm?: boolean },
+): Promise<Item[]> {
   const out: Item[] = [];
   let i = 0;
   async function worker() {
     while (i < inputs.length) {
       const input = inputs[i++];
-      out.push(await tagOne(input));
+      out.push(await tagOne(input, opts));
     }
   }
-  await Promise.all(Array.from({ length: Math.min(concurrency, inputs.length) }, worker));
+  await Promise.all(Array.from({ length: Math.min(concurrency, Math.max(inputs.length, 1)) }, worker));
   return out;
 }
 
-export async function tagOne(input: RawInput): Promise<Item> {
+export async function tagOne(input: RawInput, opts?: { llm?: boolean }): Promise<Item> {
   let tag: TagResult;
+  const useLlm = opts?.llm !== false && hasLLM();
   try {
-    tag = hasLLM() ? await llmTag(input) : heuristicTag(input);
+    tag = useLlm ? await llmTag(input) : heuristicTag(input);
   } catch (e) {
     console.warn("[tagger] LLM failed, using heuristic:", (e as Error).message);
     tag = heuristicTag(input);

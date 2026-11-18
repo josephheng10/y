@@ -12,6 +12,7 @@ export const SOURCE_STYLE: Record<Source, { label: string; icon: string; cls: st
   email: { label: "Listserv", icon: "✉️", cls: "text-sky-700" },
   yaleconnect: { label: "YaleConnect", icon: "🏛️", cls: "text-yale" },
   fizz: { label: "Fizz", icon: "🫧", cls: "text-pink-600" },
+  campus: { label: "Campus", icon: "🗺", cls: "text-cyan-700" },
 };
 
 const TZ = "America/New_York";

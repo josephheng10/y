@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { formatWhen } from "@/lib/format";
+import { sourceLabel } from "@/lib/taste";
 import { listCampusEvents } from "../data";
 
 export async function EventList() {
@@ -12,7 +13,7 @@ export async function EventList() {
     <div className="grid gap-6 sm:grid-cols-2">
       {events.map((event) => (
         <article key={event.id} className="border border-white/10 p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan">{event.source}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan">{sourceLabel(event.source)}</p>
           <h2 className="mt-2 text-xl font-semibold">
             <Link href={`/events/${encodeURIComponent(event.id)}`} className="hover:underline">
               {event.title}

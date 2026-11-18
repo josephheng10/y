@@ -24,6 +24,7 @@ import {
 } from "@/lib/taste";
 import ItemCard, { TicketBody } from "./ItemCard";
 import TodayCard from "./TodayCard";
+import DigPanel from "./DigPanel";
 import { nyKey, upcomingDays } from "../ui";
 
 interface Props {
@@ -172,6 +173,7 @@ export default function Feed({ initialItems, user, config }: Props) {
           </div>
           <div className="flex items-center gap-2">
             <HeaderBtn onClick={spin}>Spin</HeaderBtn>
+            <HeaderBtn onClick={() => setTab("you")}>Dig</HeaderBtn>
             <HeaderBtn onClick={() => { setTab("you"); }}>Tune</HeaderBtn>
             <HeaderBtn onClick={() => void refresh()}>Refresh</HeaderBtn>
           </div>
@@ -207,7 +209,7 @@ export default function Feed({ initialItems, user, config }: Props) {
               ))}
             </div>
             <div className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4">
-              {(["all", "email", "yaleconnect", "fizz"] as SourceFilter[]).map((entry) => (
+              {(["all", "email", "yaleconnect", "fizz", "campus"] as SourceFilter[]).map((entry) => (
                 <button
                   key={entry}
                   type="button"
@@ -344,7 +346,9 @@ export default function Feed({ initialItems, user, config }: Props) {
         )}
 
         {tab === "you" && (
-          <YouPanel
+          <div className="space-y-16">
+            <DigPanel profile={profile} onChange={patch} onIngested={refresh} />
+            <YouPanel
             profile={profile}
             user={user}
             config={config}
@@ -354,6 +358,7 @@ export default function Feed({ initialItems, user, config }: Props) {
             onSignIn={(provider) => void signIn(provider)}
             onSignOut={() => void signOut({ callbackUrl: "/" })}
           />
+          </div>
         )}
       </main>
 
@@ -471,7 +476,7 @@ function TuneBlock({
       <div className="px-4 py-5 sm:px-6">
         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan">Tune Y</p>
         <h2 className="mt-2 max-w-[14ch] font-display text-6xl leading-[0.85]">What are you leaving your room for?</h2>
-        <p className="mt-3 max-w-md text-sm text-neutral-400">Pick a few. The wall reorders around them, and your college floats its own stuff up.</p>
+        <p className="mt-3 max-w-md text-sm text-neutral-400">Pick a few. The wall reorders around them. Under You, the digger opens the public calendars and lists that match.</p>
         <div className="no-scrollbar -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 sm:-mx-6 sm:px-6">
           {COLLEGES.map((college) => {
             const on = profile.college === college;
