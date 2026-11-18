@@ -78,3 +78,4 @@ Run `npm run lint` and `npm run typecheck` for code checks, or `npm run build` f
 <img width="1000" height="1000" alt="mail google" src="https://github.com/user-attachments/assets/f0cb268f-ee1b-45ba-ae10-dc27f3f5bce0" />
 
 </details>
+<img width="3024" height="1964" alt="unnamed" src="https://github.com/user-attachments/assets/c64213aa-cc75-4644-852e-1b01f8097491" />
