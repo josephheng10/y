@@ -1,6 +1,6 @@
 import { Icon, type IconName } from "@/components/Icon";
 import { formatWhen } from "@/lib/format";
-import { loadFizzCatalog, type FizzPost } from "../data";
+import { loadFizzCatalog, type FizzCatalog, type FizzPost } from "../data";
 
 function metric(icon: IconName, label: string, value: number | null) {
   if (value == null) return null;
@@ -43,9 +43,9 @@ export async function FizzFeed({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q: query = "" } = await searchParams;
-  let catalog: ReturnType<typeof loadFizzCatalog> | null = null;
+  let catalog: FizzCatalog | null = null;
   try {
-    catalog = loadFizzCatalog(query);
+    catalog = await loadFizzCatalog(query);
   } catch {
     // The archive is optional outside environments with a Fizz database.
   }

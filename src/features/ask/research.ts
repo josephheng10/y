@@ -1,9 +1,8 @@
 import { summarizeEvidence } from "@/features/ask/summarize";
 import { listInfo } from "@/features/info/data";
-import { fizzDbPath } from "@/lib/fizz";
+import { loadFizzResearchComments, loadFizzResearchPosts } from "@/lib/fizz";
 import { formatWhen } from "@/lib/format";
 import { loadHubItems } from "@/lib/hub-items";
-import { DatabaseSync } from "node:sqlite";
 
 export type ResearchSource = {
   kind: "post" | "event" | "info";
@@ -36,16 +35,6 @@ const FORWARD = /\b(tonight|\btn\b|this weekend|friday|saturday|flyer|doors at|c
 const LOOKING_BACK = /\b(last year|last night|was so|went to|proves)\b/i;
 const TIME_HINT = /\b(\d{1,2}(?::\d{2})?\s*(?:am|pm)|tonight|\btn\b|doors)\b/i;
 
-type PostRow = {
-  post_key: string;
-  body: string;
-  displayed_age: string | null;
-  first_seen_at: string;
-  author_label: string | null;
-  community: string | null;
-  media_reference: string | null;
-};
-
 function ageToMs(age: string | null): number | null {
   if (!age) return null;
   const match = age.trim().toLowerCase().match(/^(\d+)\s*(m|min|h|hr|hrs|d|w|wk|wks|mo|y|yr)s?$/);
@@ -74,34 +63,13 @@ function excerpt(body: string): string {
   return flat.length > 220 ? `${flat.slice(0, 217)}…` : flat;
 }
 
-function loadPosts(): PostRow[] {
-  const db = new DatabaseSync(fizzDbPath(), { readOnly: true });
-  try {
-    return db.prepare(
-      `SELECT post_key, body, displayed_age, first_seen_at, author_label, community, media_reference
-       FROM posts
-       WHERE body IS NOT NULL AND length(trim(body)) > 0`,
-    ).all() as PostRow[];
-  } finally {
-    db.close();
-  }
-}
-
-function latestSeen(posts: PostRow[]): Date | null {
-  let latest = 0;
-  for (const post of posts) {
-    const time = Date.parse(post.first_seen_at);
-    if (time > latest) latest = time;
-  }
-  return latest ? new Date(latest) : null;
-}
-
 export async function researchQuestion(question: string): Promise<ResearchAnswer> {
   const asked = question.trim().slice(0, 400);
   const words = tokens(asked);
   const aboutParties = partyQuestion(asked);
-  const posts = loadPosts();
-  const newest = latestSeen(posts);
+  const terms = aboutParties ? PARTY : words;
+  const { posts, latestSeenAt } = await loadFizzResearchPosts(terms);
+  const newest = latestSeenAt ? new Date(latestSeenAt) : null;
   const now = new Date();
   const catalogIsStale = newest != null && now.getTime() - newest.getTime() > 3 * 24 * 60 * 60 * 1000;
   const reference = catalogIsStale && newest ? newest : now;
@@ -137,8 +105,10 @@ export async function researchQuestion(question: string): Promise<ResearchAnswer
     return true;
   }).slice(0, 8);
 
-  const comments = loadComments(uniqueRanked.map(({ post }) => post.post_key));
-  const events = await loadHubItems();
+  const [comments, events] = await Promise.all([
+    loadFizzResearchComments(uniqueRanked.map(({ post }) => post.post_key)),
+    loadHubItems(),
+  ]);
   const eventSources: ResearchSource[] = events
     .filter((event) => {
       const start = event.starts_at ? Date.parse(event.starts_at) : Number.NaN;
@@ -208,26 +178,4 @@ function flyerNote(media: string | null): string | null {
   const text = media.trim();
   if (!/flyer|poster|invite|ticket|party|rave|formal|tonight/i.test(text)) return null;
   return text.slice(0, 240);
-}
-
-function loadComments(keys: string[]): Map<string, string[]> {
-  const grouped = new Map<string, string[]>();
-  if (keys.length === 0) return grouped;
-  const db = new DatabaseSync(fizzDbPath(), { readOnly: true });
-  try {
-    const marks = keys.map(() => "?").join(", ");
-    const rows = db.prepare(
-      `SELECT post_key, body FROM comments
-       WHERE post_key IN (${marks}) AND body IS NOT NULL AND length(trim(body)) > 0
-       ORDER BY first_seen_at`,
-    ).all(...keys) as { post_key: string; body: string }[];
-    for (const row of rows) {
-      const list = grouped.get(row.post_key) ?? [];
-      if (list.length < 4) list.push(row.body.trim());
-      grouped.set(row.post_key, list);
-    }
-  } finally {
-    db.close();
-  }
-  return grouped;
 }

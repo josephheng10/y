@@ -50,7 +50,9 @@ Open [http://localhost:3000](http://localhost:3000). With no env vars the wall u
 
 ## Fizz
 
-The catalog reader lives in `src/lib/fizz.ts` and is exported from `src/features/fizz`. It reads the sqlite file at `BS/output/fizz/fizz.sqlite` (override with `FIZZ_DB`). `npm run fizz:import` loads JSON batches dropped in that inbox. It does not open Fizz.
+`/posts` and `/ask` use the Fizz archive through `src/lib/fizz.ts`. By default it reads `BS/output/fizz/fizz.sqlite`. Set `FIZZ_DB` to use another SQLite file. `npm run fizz:import` loads JSON batches dropped in the SQLite archive's inbox.
+
+To use the hosted archive, run `supabase/fizz.sql` in the Supabase SQL Editor and set `FIZZ_SUPABASE_URL` and `FIZZ_SUPABASE_SECRET_KEY` in the server environment. Run `npm run fizz:migrate` with Node.js 22.13 or later to upsert the SQLite tables and verify their row counts. Rerun the command after importing new SQLite batches to upload the updates.
 
 `postToFizzInput` turns a catalog post into the body `POST /api/ingest/fizz` already accepts. Required fields there are `external_id` and `title`. If `category` is missing, the tagger fills it in. Sample payload: `examples/fizz-items.json`.
 

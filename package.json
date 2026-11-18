@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "fizz:import": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/import-fizz-inbox.ps1"
+    "fizz:import": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/import-fizz-inbox.ps1",
+    "fizz:migrate": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/migrate-fizz.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
