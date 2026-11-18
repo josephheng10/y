@@ -1,4 +1,4 @@
-<img width="3024" height="1964" alt="unnamed" src="https://github.com/user-attachments/assets/c64213aa-cc75-4644-852e-1b01f8097491" />
+<img width="1000" height="1000" alt="mail google" src="https://github.com/user-attachments/assets/36df11c6-1599-4721-b53e-4e8e9be8566c" />
 
 **Y** is an X-style campus feed built for Yale students at a hackathon.
 
