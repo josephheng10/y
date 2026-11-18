@@ -117,7 +117,7 @@ function partyBriefing(brief: Brief, when: string): string {
   const places = unique(
     [...text.matchAll(/\b(?:\d{1,4}\s+[A-Z][A-Za-z]+(?:\s+(?:St|Street|Ave|Rd))?|[A-Z][a-z]+(?: Hall| College| Buttery))\b/g)].map((match) => match[0]),
   ).slice(0, 3);
-  const flyers = brief.posts.map((post) => post.flyer).filter((flyer): flyer is string => Boolean(flyer) && !/^https?:/i.test(flyer));
+  const flyers = brief.posts.map((post) => post.flyer).filter((flyer): flyer is string => !!flyer && !/^https?:/i.test(flyer));
   const comments = usefulComments(brief.posts);
 
   const sentences = [when];

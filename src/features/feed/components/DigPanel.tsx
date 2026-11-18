@@ -74,10 +74,9 @@ export default function DigPanel({
   return (
     <section className="space-y-5">
       <div>
-        <h2 className="font-display text-6xl leading-none">Dig</h2>
-        <p className="mt-2 max-w-md text-sm text-neutral-400">
-          Pick calendars, newsletters, and lists. Each pass opens up to eight public feeds and puts the events on your wall.
-          It does not join a list or open anyone&apos;s inbox. Franklin, Pauli Murray, and Silliman are the colleges with a public Google Calendar.
+        <h2 className="text-xl font-bold tracking-tight">Dig campus</h2>
+        <p className="mt-1 text-sm text-muted">
+          Follow public calendars, newsletters, and mailing lists. Each dig checks up to eight feeds for events to add to the Wall.
         </p>
       </div>
 
@@ -85,7 +84,7 @@ export default function DigPanel({
         <button
           type="button"
           onClick={() => onChange({ ...profile, follows: suggestedIds(profile), tuned: true })}
-          className="border border-white/15 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-200"
+          className="pill"
         >
           Match my interests
         </button>
@@ -93,34 +92,34 @@ export default function DigPanel({
           <button
             type="button"
             onClick={() => onChange({ ...profile, follows: [] })}
-            className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500"
+            className="post-action"
           >
             Clear
           </button>
         )}
       </div>
 
-      <div className="border border-white/10 px-4 py-3">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
-          {plan.automatic ? "This pass, from your cut" : "This pass"}
+      <div className="rounded-xl bg-canvas px-4 py-3">
+        <p className="text-sm font-semibold">
+          {plan.automatic ? "Suggested feeds" : "Feeds for this dig"}
         </p>
-        <p className="mt-2 text-sm text-neutral-200">
-          {plan.pulls.length ? plan.pulls.map((source) => source.name).join(" · ") : "Nothing public to open."}
+        <p className="mt-2 text-sm text-muted">
+          {plan.pulls.length ? plan.pulls.map((source) => source.name).join(" · ") : "No feeds selected."}
         </p>
         <button
           type="button"
           onClick={() => void dig()}
           disabled={busy || plan.pulls.length === 0}
-          className="mt-3 bg-cyan px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-black disabled:opacity-40"
+          className="primary-button mt-3"
         >
-          {busy ? "Digging" : "Dig campus"}
+          {busy ? "Checking feeds…" : "Check feeds"}
         </button>
-        {error && <p className="mt-3 text-sm text-red-300">{error}</p>}
+        {error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}
         {kept !== null && !error && (
-          <p className="mt-3 text-sm text-neutral-300">{kept} events on the wall from this pass.</p>
+          <p role="status" className="mt-3 text-sm text-muted">{kept} events added to the Wall.</p>
         )}
         {looked && (
-          <ul className="mt-3 space-y-1 text-xs text-neutral-400">
+          <ul className="mt-3 space-y-1 text-xs text-muted">
             {looked.map((row) => (
               <li key={row.id}>
                 {row.name}: {statusLine(row)}
@@ -133,8 +132,10 @@ export default function DigPanel({
       <input
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        placeholder="Search Tsai, SOM, athletics"
-        className="w-full border border-white/15 bg-transparent px-3 py-2 text-sm outline-none placeholder:text-neutral-600 focus:border-cyan"
+        type="search"
+        aria-label="Search campus sources"
+        placeholder="Search campus sources"
+        className="field"
       />
 
       {KINDS.map((kind) => {
@@ -142,8 +143,8 @@ export default function DigPanel({
         if (!rows.length) return null;
         return (
           <div key={kind.id}>
-            <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">{kind.label}</h3>
-            <div className="mt-3 divide-y divide-white/10 border border-white/10">
+            <h3 className="text-sm font-bold">{kind.label}</h3>
+            <div className="mt-1 divide-y divide-line">
               {rows.map((source) => {
                 const on = profile.follows.includes(source.id);
                 return (
@@ -151,14 +152,15 @@ export default function DigPanel({
                     key={source.id}
                     type="button"
                     onClick={() => onChange((current) => toggleFollow(current, source.id))}
-                    className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left"
+                    aria-pressed={on}
+                    className="group flex w-full items-center justify-between gap-4 py-3 text-left"
                   >
                     <span>
-                      <span className="block text-sm">{source.name}</span>
-                      <span className="block text-xs text-neutral-500">{source.blurb}</span>
+                      <span className="block text-sm font-semibold group-hover:text-accent">{source.name}</span>
+                      <span className="block text-xs text-muted">{source.blurb}</span>
                     </span>
-                    <span className={`shrink-0 text-[11px] font-semibold uppercase tracking-[0.16em] ${on ? "text-cyan" : "text-neutral-500"}`}>
-                      {on ? "On" : "Add"}
+                    <span className={`pill min-h-8 shrink-0 ${on ? "bg-accent-soft text-accent" : ""}`}>
+                      {on ? "Following" : "Follow"}
                     </span>
                   </button>
                 );

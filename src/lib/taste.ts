@@ -150,7 +150,7 @@ export function itemMatchesQuick(item: Item, quick: string, interests: string[])
 }
 
 /** Higher means it should lead the wall. College hits outrank a generic keyword hit. */
-export function tuneScore(item: Item, profile: Profile): number {
+export function tuneScore(item: Item, profile: Profile, now = Date.now()): number {
   let score = item.score;
   for (const id of profile.interests) {
     if (itemMatchesInterest(item, id)) score += 34;
@@ -158,7 +158,7 @@ export function tuneScore(item: Item, profile: Profile): number {
   if (profile.college && blobOf(item).includes(profile.college.toLowerCase())) score += 48;
   score += followedBoost(item, profile.follows);
   if (item.starts_at) {
-    const hours = (Date.parse(item.starts_at) - Date.now()) / 3600000;
+    const hours = (Date.parse(item.starts_at) - now) / 3600000;
     if (hours >= -0.5 && hours <= 8) score += 22;
   }
   return score;
@@ -209,51 +209,6 @@ export function toggleInterest(profile: Profile, interestId: string): Profile {
   const interests = on ? profile.interests.filter((id) => id !== interestId) : [...profile.interests, interestId];
   const needs = NEEDS.filter((n) => n.interests.every((id) => interests.includes(id))).map((n) => n.id);
   return { ...profile, interests, needs };
-}
-
-export interface PosterSkin {
-  bg: string;
-  fg: string;
-  accent: string;
-  vibe: string;
-}
-
-const FOODS: PosterSkin[] = [
-  { vibe: "EAT", bg: "#F2E43A", fg: "#161616", accent: "#E23B2F" },
-  { vibe: "EAT", bg: "#E23B2F", fg: "#FFF7EE", accent: "#F2E43A" },
-  { vibe: "EAT", bg: "#F6F1E7", fg: "#1A1A1A", accent: "#C8102E" },
-];
-const APPLY: PosterSkin = { vibe: "APPLY", bg: "#EFECE4", fg: "#161616", accent: "#0E1F18" };
-const CLUB: PosterSkin = { vibe: "CLUB", bg: "#0E1F18", fg: "#E7F6D8", accent: "#D6FF4A" };
-const SKIP: PosterSkin = { vibe: "SKIP", bg: "#161616", fg: "#8A8A84", accent: "#3A3A3A" };
-const GO: PosterSkin = { vibe: "GO", bg: "#111111", fg: "#F4F4F1", accent: "#20CCEE" };
-const HEAR: PosterSkin = { vibe: "HEAR", bg: "#C8102E", fg: "#F7F4EE", accent: "#F2E43A" };
-const SHOW: PosterSkin = { vibe: "SHOW", bg: "#F7F4EE", fg: "#0C2340", accent: "#0C2340" };
-const NIGHT: PosterSkin = { vibe: "NIGHT", bg: "#1C1A17", fg: "#F3EFE4", accent: "#FFB25A" };
-const FIELD: PosterSkin = { vibe: "PLAY", bg: "#14301F", fg: "#E7F6D8", accent: "#F2E43A" };
-
-function hashId(id: string): number {
-  let h = 0;
-  for (const c of id) h = (h * 33 + c.charCodeAt(0)) >>> 0;
-  return h;
-}
-
-export function posterFor(item: Item): PosterSkin {
-  if (item.category === "Free food") return FOODS[hashId(item.id) % FOODS.length];
-  if (item.category === "Opportunity") return APPLY;
-  if (item.category === "Club news") return CLUB;
-  if (item.category === "Noise") return SKIP;
-  const blob = blobOf(item);
-  if (/cappella|concert|orchestra|jam|music|yso/.test(blob)) return HEAR;
-  if (/formal|party|dance|fling|buttery/.test(blob)) return NIGHT;
-  if (/improv|theater|gallery|paint|novel|writing/.test(blob)) return SHOW;
-  if (/basketball|soccer|intramural|climb|game/.test(blob)) return FIELD;
-  const skins = [GO, HEAR, SHOW, NIGHT];
-  return skins[hashId(item.id) % skins.length];
-}
-
-export function refCode(id: string): string {
-  return `Y-${(hashId(id) % 10000).toString().padStart(4, "0")}`;
 }
 
 export function sourceLabel(source: Item["source"]): string {

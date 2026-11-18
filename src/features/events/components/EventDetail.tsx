@@ -1,38 +1,37 @@
 import Link from "next/link";
+import { Icon } from "@/components/Icon";
 import { formatWhen } from "@/lib/format";
 import { sourceLabel } from "@/lib/taste";
 import type { Item } from "@/lib/types";
 
 export function EventDetail({ event }: { event: Item }) {
   return (
-    <article className="border border-white/10 p-5">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan">{sourceLabel(event.source)}</p>
-      <h2 className="mt-2 font-display text-5xl leading-none">{event.title}</h2>
-      {event.summary ? <p className="mt-4 max-w-xl text-sm leading-6 text-neutral-300">{event.summary}</p> : null}
-      <dl className="mt-6 grid gap-3 text-sm">
-        {event.starts_at ? (
-          <div>
-            <dt className="text-neutral-500">When</dt>
-            <dd>{formatWhen(event.starts_at)}</dd>
-          </div>
-        ) : null}
-        {event.location ? (
-          <div>
-            <dt className="text-neutral-500">Where</dt>
-            <dd>{event.location}</dd>
-          </div>
-        ) : null}
-      </dl>
-      <p className="mt-6 flex gap-4 text-sm">
-        <Link href="/events" className="text-cyan hover:underline">
-          All events
-        </Link>
-        {event.url ? (
-          <a href={event.url} className="text-cyan hover:underline">
-            Source
-          </a>
-        ) : null}
-      </p>
+    <article>
+      <Link href="/events" className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-accent hover:underline">
+        <Icon name="back" size={17} /> All events
+      </Link>
+      <div className="surface p-5 sm:p-6">
+        <p className="text-sm font-semibold text-accent">{sourceLabel(event.source)}{event.demo && " · Sample"}</p>
+        <h1 className="page-title mt-1.5">{event.title}</h1>
+        {event.summary && <p className="mt-3 text-sm leading-relaxed text-muted">{event.summary}</p>}
+        {(event.starts_at || event.location) && (
+          <dl className="mt-5 grid gap-3 text-sm">
+            {event.starts_at && (
+              <div>
+                <dt className="font-semibold">When</dt>
+                <dd className="mt-0.5 text-muted">{formatWhen(event.starts_at)}</dd>
+              </div>
+            )}
+            {event.location && (
+              <div>
+                <dt className="font-semibold">Where</dt>
+                <dd className="mt-0.5 text-muted">{event.location}</dd>
+              </div>
+            )}
+          </dl>
+        )}
+        {event.url && <a href={event.url} className="primary-button mt-5"><Icon name="external" size={16} /> View original</a>}
+      </div>
     </article>
   );
 }

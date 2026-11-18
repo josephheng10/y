@@ -12,7 +12,7 @@ export default async function InfoGuidePage({ params }: { params: Promise<{ slug
   if (!guide) notFound();
 
   return (
-    <PageShell current="/info" title="Info">
+    <PageShell>
       <InfoDetail guide={guide} />
     </PageShell>
   );

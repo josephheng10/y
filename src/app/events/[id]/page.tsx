@@ -10,7 +10,7 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
   if (!event) notFound();
 
   return (
-    <PageShell current="/events" title="Events">
+    <PageShell>
       <EventDetail event={event} />
     </PageShell>
   );

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Icon } from "@/components/Icon";
 
 type Source = {
   kind: "post" | "event" | "info";
@@ -17,10 +18,10 @@ type Turn = {
   sources?: Source[];
 };
 
-const starter = "what parties are going on tonight?";
+const starter = "What parties are going on tonight?";
 
 export function AskChat() {
-  const [draft, setDraft] = useState(starter);
+  const [draft, setDraft] = useState("");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +43,8 @@ export function AskChat() {
       if (!response.ok || !payload.answer) {
         throw new Error(payload.error ?? "The chatbot could not answer.");
       }
-      setTurns((current) => [...current, { role: "assistant", text: payload.answer!, sources: payload.sources ?? [] }]);
+      const answer = payload.answer;
+      setTurns((current) => [...current, { role: "assistant", text: answer, sources: payload.sources ?? [] }]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "The chatbot could not answer.");
     } finally {
@@ -51,15 +53,15 @@ export function AskChat() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex min-h-80 flex-col gap-3">
+    <div className="surface">
+      <div className="flex min-h-65 flex-col gap-4 p-4 sm:p-6" role="log" aria-label="Conversation">
         {turns.length === 0 ? (
           <button
             type="button"
             onClick={() => ask(starter)}
-            className="self-start border border-white/15 px-4 py-3 text-left text-sm text-neutral-200"
+            className="pill self-start text-left"
           >
-            {starter}
+            <Icon name="sparkles" size={16} /> {starter}
           </button>
         ) : null}
         {turns.map((turn, index) => (
@@ -67,30 +69,30 @@ export function AskChat() {
             key={`${turn.role}-${index}`}
             className={
               turn.role === "user"
-                ? "self-end max-w-[90%] bg-white px-4 py-3 text-sm text-black"
-                : "border border-white/10 px-4 py-3 text-sm leading-6 text-neutral-100"
+                ? "max-w-[90%] self-end rounded-[18px] rounded-br-sm bg-accent px-4 py-2.5 text-sm text-white"
+                : "self-start rounded-[18px] rounded-bl-sm bg-canvas px-4 py-3 text-sm leading-relaxed"
             }
           >
-            <p className="whitespace-pre-wrap">{turn.text}</p>
+            <p className="wrap-anywhere whitespace-pre-wrap">{turn.text}</p>
             {turn.sources && turn.sources.length > 0 ? (
-              <ul className="mt-3 flex flex-col gap-2 border-t border-white/10 pt-3">
+              <ul className="mt-3 flex flex-col gap-2 border-t border-line pt-3">
                 {turn.sources.map((source) => (
                   <li key={`${source.kind}-${source.href}-${source.excerpt}`}>
-                    <Link href={source.href} className="font-medium text-cyan">
+                    <Link href={source.href} className="font-semibold text-accent hover:underline">
                       {source.kind === "post" ? "Post" : source.kind === "event" ? "Event" : "Info"} · {source.title}
                     </Link>
-                    {source.when ? <span className="mt-0.5 block text-xs text-neutral-500">{source.when}</span> : null}
+                    {source.when ? <span className="mt-0.5 block text-xs text-muted">{source.when}</span> : null}
                   </li>
                 ))}
               </ul>
             ) : null}
           </article>
         ))}
-        {pending ? <p className="text-sm text-neutral-500">Searching the catalog…</p> : null}
-        {error ? <p className="text-sm text-red-300">{error}</p> : null}
+        {pending && <p className="text-sm text-muted">Searching campus posts and events…</p>}
+        {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
       </div>
       <form
-        className="flex gap-2"
+        className="flex items-center gap-2 border-t border-line p-3 sm:px-4"
         onSubmit={(event) => {
           event.preventDefault();
           void ask(draft);
@@ -99,15 +101,16 @@ export function AskChat() {
         <input
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
-          placeholder="Ask about tonight, a club, dining…"
-          className="h-11 flex-1 border border-white/15 bg-transparent px-4 text-sm outline-none focus:border-cyan"
+          placeholder="Ask about campus…"
+          aria-label="Ask a question"
+          className="field flex-1 rounded-full"
         />
         <button
           type="submit"
-          disabled={pending}
-          className="h-11 border border-white bg-white px-5 text-sm font-medium text-black disabled:opacity-60"
+          disabled={pending || !draft.trim()}
+          className="primary-button min-h-11"
         >
-          Ask
+          <Icon name="send" size={16} /> Send
         </button>
       </form>
     </div>

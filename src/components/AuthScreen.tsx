@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { signIn, signOut } from "next-auth/react";
 import { useState, type FormEvent, type ReactNode } from "react";
-import { SiteNav } from "./SiteNav";
 
 const ERRORS: Record<string, string> = {
   CredentialsSignin: "That email and password don't match.",
@@ -78,37 +77,26 @@ export function AuthScreen({ mode, callbackUrl, initialError, session, providers
   }
 
   return (
-    <div className="min-h-dvh bg-[#070708] text-ink">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-[#070708]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-baseline gap-3 px-4 py-3">
-          <Link href="/" className="font-display text-4xl leading-none tracking-tight">
-            Y
-          </Link>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-500">New Haven</p>
-        </div>
-        <SiteNav current="/" />
-      </header>
-      <main className="mx-auto max-w-md px-4 py-10">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan">{mode === "login" ? "Account" : "New account"}</p>
-        <h1 className="mt-2 font-display text-7xl leading-none">{mode === "login" ? "Sign in" : "Join"}</h1>
-        <p className="mt-3 text-sm text-neutral-400">
-          {mode === "login"
-            ? "Your account keeps private listserv mail on your wall. The rest of campus stays open."
-            : "A name, an email, and a password. Gmail and Outlook can come later for listserv sync."}
-        </p>
+    <main className="surface w-full max-w-md p-5 sm:p-7">
+        <h1 className="page-title">{session ? "Your account" : mode === "login" ? "Sign in" : "Create an account"}</h1>
+        {!session && (
+          <p className="mt-2 text-sm text-muted">
+            {mode === "login" ? "Sign in to connect and sync your listserv mail." : "Join Y with your name, email, and password."}
+          </p>
+        )}
 
         {session ? (
-          <div className="mt-8 border border-white/10 px-4 py-5">
+          <div className="mt-5">
             <p className="text-sm">You&apos;re signed in as {session.name || session.email}.</p>
-            <p className="mt-1 text-xs text-neutral-500">{session.email}</p>
+            {session.name && <p className="mt-1 text-xs text-muted">{session.email}</p>}
             <div className="mt-4 flex gap-2">
-              <Link href={callbackUrl} className="bg-cyan px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-black">
+              <Link href={callbackUrl} className="primary-button">
                 Continue
               </Link>
               <button
                 type="button"
                 onClick={() => void signOut({ callbackUrl: mode === "login" ? "/login" : "/signup" })}
-                className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400"
+                className="post-action"
               >
                 Sign out
               </button>
@@ -116,7 +104,7 @@ export function AuthScreen({ mode, callbackUrl, initialError, session, providers
           </div>
         ) : (
           <>
-            <form onSubmit={(event) => void onSubmit(event)} className="mt-8 space-y-4">
+            <form onSubmit={(event) => void onSubmit(event)} className="mt-6 space-y-4">
               {mode === "signup" && (
                 <Field label="Name">
                   <input
@@ -167,30 +155,30 @@ export function AuthScreen({ mode, callbackUrl, initialError, session, providers
                   />
                 </Field>
               )}
-              {error && <p className="border border-white/15 px-3 py-2 text-sm text-neutral-200">{error}</p>}
+              {error && <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>}
               <button
                 type="submit"
                 disabled={pending !== null}
-                className="w-full bg-cyan px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-black disabled:opacity-50"
+                className="primary-button min-h-11 w-full"
               >
-                {pending === "email" ? "Working" : mode === "login" ? "Sign in" : "Create account"}
+                {pending === "email" ? "Working…" : mode === "login" ? "Sign in" : "Create account"}
               </button>
             </form>
 
             {mode === "login" && (
-              <div className="mt-8">
-                <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">Or continue with</h2>
-                <div className="mt-3 divide-y divide-white/10 border border-white/10">
+              <div className="mt-6">
+                <h2 className="text-sm font-semibold">Or continue with</h2>
+                <div className="mt-1 divide-y divide-line">
                   <ProviderButton
                     title="Gmail"
-                    detail={providers.google ? "Also unlocks listserv sync" : "Needs Google keys"}
+                    detail={providers.google ? "Connect your listserv mail" : "Unavailable"}
                     enabled={providers.google && pending === null}
                     pending={pending === "google"}
                     onClick={() => void onProvider("google")}
                   />
                   <ProviderButton
                     title="Outlook"
-                    detail={providers.microsoft ? "Yale or personal" : "Needs Microsoft keys"}
+                    detail={providers.microsoft ? "Use your Yale or personal account" : "Unavailable"}
                     enabled={providers.microsoft && pending === null}
                     pending={pending === "azure-ad"}
                     onClick={() => void onProvider("azure-ad")}
@@ -199,25 +187,24 @@ export function AuthScreen({ mode, callbackUrl, initialError, session, providers
               </div>
             )}
 
-            <p className="mt-6 text-sm text-neutral-400">
+            <p className="mt-6 text-sm text-muted">
               {mode === "login" ? "No account yet?" : "Already have one?"}{" "}
-              <Link href={otherHref} className="text-cyan">
+              <Link href={otherHref} className="font-semibold text-accent hover:underline">
                 {mode === "login" ? "Create one" : "Sign in"}
               </Link>
             </p>
           </>
         )}
-      </main>
-    </div>
+    </main>
   );
 }
 
-const fieldClass = "mt-2 w-full border border-white/15 bg-transparent px-3 py-3 text-base outline-none placeholder:text-neutral-600 focus:border-cyan";
+const fieldClass = "field mt-1.5";
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="block">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">{label}</span>
+      <span className="text-sm font-semibold">{label}</span>
       {children}
     </label>
   );
@@ -241,13 +228,13 @@ function ProviderButton({
       type="button"
       disabled={!enabled}
       onClick={onClick}
-      className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left disabled:cursor-not-allowed disabled:opacity-40"
+      className="flex w-full items-center justify-between gap-4 py-3 text-left enabled:hover:text-accent disabled:text-muted"
     >
       <span>
-        <span className="block text-sm">{pending ? "Opening" : title}</span>
-        <span className="block text-xs text-neutral-500">{detail}</span>
+        <span className="block text-sm font-medium">{pending ? "Opening…" : title}</span>
+        <span className="block text-xs text-muted">{detail}</span>
       </span>
-      <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan">{enabled ? "Open" : "Off"}</span>
+      {enabled && <span className="text-xs font-semibold text-accent">Continue</span>}
     </button>
   );
 }

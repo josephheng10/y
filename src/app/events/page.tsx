@@ -5,11 +5,7 @@ export const dynamic = "force-dynamic";
 
 export default function EventsPage() {
   return (
-    <PageShell
-      current="/events"
-      title="Events"
-      lede="Campus events from the wall: anything tagged Event, plus YaleConnect."
-    >
+    <PageShell title="Events">
       <EventList />
     </PageShell>
   );

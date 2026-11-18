@@ -3,11 +3,7 @@ import { InfoList } from "@/features/info";
 
 export default function InfoPage() {
   return (
-    <PageShell
-      current="/info"
-      title="Info"
-      lede="Guides that stay useful after the day they were posted. Sample copy until a real source is wired in."
-    >
+    <PageShell title="Campus info" lede="Guides for getting around Yale.">
       <InfoList />
     </PageShell>
   );

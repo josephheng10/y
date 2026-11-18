@@ -10,12 +10,8 @@ export default function PostsPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   return (
-    <PageShell
-      current="/posts"
-      title="Posts"
-      lede="The local Fizz catalog. Tagged posts land on the wall through /api/ingest/fizz."
-    >
-      <Suspense fallback={<p className="text-sm text-neutral-400">Loading posts…</p>}>
+    <PageShell title="Posts" lede="Browse the Fizz archive.">
+      <Suspense fallback={<p className="text-sm text-muted">Loading posts…</p>}>
         <FizzFeed searchParams={searchParams} />
       </Suspense>
     </PageShell>
