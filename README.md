@@ -79,3 +79,10 @@ Run `npm run lint` and `npm run typecheck` for code checks, or `npm run build` f
 
 </details>
 <img width="3024" height="1964" alt="unnamed" src="https://github.com/user-attachments/assets/c64213aa-cc75-4644-852e-1b01f8097491" />
+
+
+
+
+https://github.com/user-attachments/assets/abdfd3a1-25a4-4558-b20b-08e81ae7fb6c
+
+
